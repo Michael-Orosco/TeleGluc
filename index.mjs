@@ -12,7 +12,7 @@ const html = `<!DOCTYPE html>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>TeleGluc</title>
+    <title>GlucoTech PE</title>
     ${css.map(f => `<link rel="stylesheet" href="/assets/${f}" />`).join('\n    ')}
   </head>
   <body>

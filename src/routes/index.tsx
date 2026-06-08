@@ -1,16 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   LineChart, Line, Legend, PieChart, Pie, Cell,
 } from "recharts";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { PatientIllustration, DoctorIllustration } from "@/components/glucotech/RoleIllustrations";
+import { ChevronLeft, ChevronRight, Filter, Search, X } from "lucide-react";
+
+const APP_NAME = "GlucoTech PE";
+const HISTORY_PAGE_SIZE = 5;
+const DOCTOR_PAGE_SIZE = 8;
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "TeleGluc — Monitoreo de Diabetes" },
-      { name: "description", content: "Plataforma de telemonitoreo de diabetes para pacientes y centros de salud." },
-      { property: "og:title", content: "TeleGluc" },
+      { title: `${APP_NAME} — Monitoreo de Diabetes` },
+      { name: "description", content: "Plataforma de telemonitoreo de diabetes para pacientes y centros de salud en Perú." },
+      { property: "og:title", content: APP_NAME },
       { property: "og:description", content: "Control y triaje de diabetes." },
     ],
   }),
@@ -70,21 +80,32 @@ function classify(r: Pick<TriajeRecord, "glucosa" | "estadoGlucosa" | "sintomas"
 }
 
 // ---------- mock persistence ----------
-const LS_USERS = "telegluc_users_v1";
-const LS_RECORDS = "telegluc_records_v1";
-const LS_SESSION = "telegluc_session_v1";
+const LS_USERS = "glucotech_users_v2";
+const LS_RECORDS = "glucotech_records_v2";
+const LS_SESSION = "glucotech_session_v2";
+
+const DAY = 86_400_000;
 
 const seedUsers: User[] = [
-  { dni: "11111111", password: "doctor", nombres: "Dra. Carla Mendoza", fechaNac: "1985-03-12", edad: "40", telefono: "987654321", direccion: "Av. Salud 123", posta: "San Isidro", role: "medico" },
-  { dni: "45612378", password: "1234", nombres: "María López", fechaNac: "1970-06-01", edad: "54", telefono: "999111222", direccion: "Jr. Lima 22", posta: "Surquillo", role: "paciente" },
+  { dni: "11111111", password: "doctor", nombres: "Dr. Gregory House", fechaNac: "1959-06-11", edad: "66", telefono: "987654321", direccion: "Av. Diagnóstico 221B", posta: "San Isidro", role: "medico" },
+  { dni: "72345612", password: "demo2026", nombres: "María Elena Vargas", fechaNac: "1968-04-15", edad: "57", telefono: "999111222", direccion: "Jr. Salud 45, Surquillo", posta: "Surquillo", role: "paciente" },
+  { dni: "45678901", password: "paciente1", nombres: "Carlos Mendieta", fechaNac: "1975-09-22", edad: "50", telefono: "988776655", direccion: "Av. Los Olivos 120", posta: "Mirones", role: "paciente" },
+  { dni: "33445566", password: "paciente2", nombres: "Rosa Huamán", fechaNac: "1982-01-08", edad: "43", telefono: "977665544", direccion: "Calle Breña 88", posta: "Breña", role: "paciente" },
 ];
 
 const seedRecords: TriajeRecord[] = [
-  { id: "1", createdAt: Date.now() - 3600_000, dni: "45612378", nombres: "María López", edad: "54", posta: "Surquillo", pa: "120/80", fc: "78", peso: "68", talla: "1.60", imc: "26.6", glucosa: "110", estadoGlucosa: "Ayunas", sintomas: [] },
-  { id: "2", createdAt: Date.now() - 7200_000, dni: "70123456", nombres: "Jorge Ruiz", edad: "61", posta: "Mirones", pa: "130/85", fc: "82", peso: "75", talla: "1.70", imc: "25.9", glucosa: "95", estadoGlucosa: "Ayunas", sintomas: ["Mucha sed"] },
-  { id: "3", createdAt: Date.now() - 1800_000, dni: "44556677", nombres: "Ana Torres", edad: "47", posta: "Breña", pa: "140/90", fc: "95", peso: "82", talla: "1.58", imc: "32.8", glucosa: "210", estadoGlucosa: "Post-prandial", sintomas: ["Mucha sed", "Visión borrosa", "Cansancio extremo"] },
-  { id: "4", createdAt: Date.now() - 86400_000, dni: "45612378", nombres: "María López", edad: "54", posta: "Surquillo", pa: "118/78", fc: "76", peso: "68", talla: "1.60", imc: "26.6", glucosa: "125", estadoGlucosa: "Post-prandial", sintomas: [] },
-  { id: "5", createdAt: Date.now() - 172800_000, dni: "45612378", nombres: "María López", edad: "54", posta: "Surquillo", pa: "122/82", fc: "80", peso: "68", talla: "1.60", imc: "26.6", glucosa: "140", estadoGlucosa: "Post-prandial", sintomas: ["Mucha sed"] },
+  { id: "r01", createdAt: Date.now() - 2 * DAY, dni: "72345612", nombres: "María Elena Vargas", edad: "57", posta: "Surquillo", pa: "118/76", fc: "74", peso: "67", talla: "1.58", imc: "26.8", glucosa: "108", estadoGlucosa: "Ayunas", sintomas: [] },
+  { id: "r02", createdAt: Date.now() - 5 * DAY, dni: "72345612", nombres: "María Elena Vargas", edad: "57", posta: "Surquillo", pa: "122/80", fc: "78", peso: "67", talla: "1.58", imc: "26.8", glucosa: "142", estadoGlucosa: "Post-prandial", sintomas: ["Mucha sed"] },
+  { id: "r03", createdAt: Date.now() - 8 * DAY, dni: "72345612", nombres: "María Elena Vargas", edad: "57", posta: "Surquillo", pa: "125/82", fc: "80", peso: "68", talla: "1.58", imc: "27.2", glucosa: "135", estadoGlucosa: "Post-prandial", sintomas: ["Mucha sed", "Cansancio extremo"] },
+  { id: "r04", createdAt: Date.now() - 12 * DAY, dni: "72345612", nombres: "María Elena Vargas", edad: "57", posta: "Surquillo", pa: "120/78", fc: "76", peso: "68", talla: "1.58", imc: "27.2", glucosa: "98", estadoGlucosa: "Ayunas", sintomas: [] },
+  { id: "r05", createdAt: Date.now() - 18 * DAY, dni: "72345612", nombres: "María Elena Vargas", edad: "57", posta: "Surquillo", pa: "128/84", fc: "82", peso: "68", talla: "1.58", imc: "27.2", glucosa: "168", estadoGlucosa: "Post-prandial", sintomas: ["Visión borrosa"] },
+  { id: "r06", createdAt: Date.now() - 25 * DAY, dni: "72345612", nombres: "María Elena Vargas", edad: "57", posta: "Surquillo", pa: "115/75", fc: "72", peso: "67", talla: "1.58", imc: "26.8", glucosa: "112", estadoGlucosa: "Ayunas", sintomas: [] },
+  { id: "r07", createdAt: Date.now() - 3 * DAY, dni: "45678901", nombres: "Carlos Mendieta", edad: "50", posta: "Mirones", pa: "130/85", fc: "84", peso: "82", talla: "1.72", imc: "27.7", glucosa: "195", estadoGlucosa: "Post-prandial", sintomas: ["Mucha sed", "Orinar seguido", "Visión borrosa", "Cansancio extremo"] },
+  { id: "r08", createdAt: Date.now() - 10 * DAY, dni: "45678901", nombres: "Carlos Mendieta", edad: "50", posta: "Mirones", pa: "126/82", fc: "80", peso: "81", talla: "1.72", imc: "27.4", glucosa: "118", estadoGlucosa: "Ayunas", sintomas: [] },
+  { id: "r09", createdAt: Date.now() - 20 * DAY, dni: "45678901", nombres: "Carlos Mendieta", edad: "50", posta: "Mirones", pa: "124/80", fc: "78", peso: "81", talla: "1.72", imc: "27.4", glucosa: "128", estadoGlucosa: "Post-prandial", sintomas: ["Mucha hambre"] },
+  { id: "r10", createdAt: Date.now() - 1 * DAY, dni: "33445566", nombres: "Rosa Huamán", edad: "43", posta: "Breña", pa: "118/74", fc: "70", peso: "62", talla: "1.55", imc: "25.8", glucosa: "102", estadoGlucosa: "Ayunas", sintomas: [] },
+  { id: "r11", createdAt: Date.now() - 7 * DAY, dni: "33445566", nombres: "Rosa Huamán", edad: "43", posta: "Breña", pa: "120/76", fc: "72", peso: "62", talla: "1.55", imc: "25.8", glucosa: "138", estadoGlucosa: "Post-prandial", sintomas: ["Mucha sed"] },
+  { id: "r12", createdAt: Date.now() - 15 * DAY, dni: "33445566", nombres: "Rosa Huamán", edad: "43", posta: "Breña", pa: "116/72", fc: "68", peso: "61", talla: "1.55", imc: "25.4", glucosa: "95", estadoGlucosa: "Ayunas", sintomas: [] },
 ];
 
 function loadJSON<T>(key: string, fallback: T): T {
@@ -157,7 +178,7 @@ function Index() {
         )}
       </main>
       <footer className="mx-auto max-w-7xl px-6 pb-8 pt-4 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} TeleGluc · Plataforma de monitoreo de diabetes
+        © {new Date().getFullYear()} {APP_NAME} · Plataforma de monitoreo de diabetes
       </footer>
     </div>
   );
@@ -169,9 +190,9 @@ function Header({ user, onLogout, onHome }: { user: User | null; onLogout: () =>
     <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
         <button onClick={onHome} className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white font-bold shadow-lg" style={{ background: "var(--gradient-hero)" }}>T</div>
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl text-white font-bold shadow-lg" style={{ background: "var(--gradient-hero)" }}>GT</div>
           <div className="text-left">
-            <div className="text-xl font-bold tracking-tight">TeleGluc</div>
+            <div className="text-xl font-bold tracking-tight">{APP_NAME}</div>
             <div className="-mt-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">Monitoreo de Diabetes</div>
           </div>
         </button>
@@ -210,20 +231,20 @@ function Landing({ onPick }: { onPick: (role: "paciente" | "medico") => void }) 
             </span>
           </h1>
           <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-            TeleGluc une a pacientes y médicos en tiempo real: registra tu triaje y síntomas, recibe seguimiento profesional y prevén complicaciones.
+            {APP_NAME} une a pacientes y médicos en tiempo real: registra tu triaje y síntomas, recibe seguimiento profesional y prevén complicaciones.
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <RoleCard
               title="Soy Paciente"
               desc="Registra tu glucemia y síntomas. Tu médico te seguirá."
-              icon="🧑‍⚕️"
+              illustration={<PatientIllustration />}
               onClick={() => onPick("paciente")}
               gradient="var(--gradient-hero)"
             />
             <RoleCard
               title="Soy Médico"
               desc="Visualiza pacientes priorizados y analiza tendencias."
-              icon="🩺"
+              illustration={<DoctorIllustration />}
               onClick={() => onPick("medico")}
               gradient="var(--gradient-card)"
             />
@@ -267,11 +288,13 @@ function Landing({ onPick }: { onPick: (role: "paciente" | "medico") => void }) 
   );
 }
 
-function RoleCard({ title, desc, icon, onClick, gradient }: { title: string; desc: string; icon: string; onClick: () => void; gradient: string }) {
+function RoleCard({ title, desc, illustration, onClick, gradient }: { title: string; desc: string; illustration: ReactNode; onClick: () => void; gradient: string }) {
   return (
     <button onClick={onClick} className="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
       <div className="absolute inset-x-0 top-0 h-1" style={{ background: gradient }} />
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl text-2xl shadow-md" style={{ background: gradient }}>{icon}</div>
+      <div className="mb-3 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-[var(--color-brand-100)] bg-[var(--color-brand-050)] shadow-md">
+        {illustration}
+      </div>
       <div className="text-lg font-bold">{title}</div>
       <div className="mt-1 text-sm text-muted-foreground">{desc}</div>
       <div className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary group-hover:gap-2 transition-all">
@@ -365,7 +388,7 @@ function LoginForm({ role, users, onLogin }: { role: "paciente" | "medico"; user
       {err && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</div>}
       <button type="submit" className={btnPrimary()} style={{ background: "var(--gradient-hero)" }}>Entrar</button>
       <p className="text-center text-[11px] text-muted-foreground">
-        Demo: {role === "medico" ? "DNI 11111111 / doctor" : "DNI 45612378 / 1234"}
+        Cuenta demo: {role === "medico" ? "DNI 11111111 / doctor" : "DNI 72345612 / demo2026"}
       </p>
     </form>
   );
@@ -444,6 +467,11 @@ function PatientApp({ user, records, onSave }: { user: User; records: TriajeReco
   const [glucosa, setGlucosa] = useState(""); const [estadoGlucosa, setEstadoGlucosa] = useState<"Ayunas" | "Post-prandial">("Ayunas");
   const [sintomas, setSintomas] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [histPage, setHistPage] = useState(1);
+  const [histRisk, setHistRisk] = useState<"" | "alto" | "medio" | "normal">("");
+  const [histFrom, setHistFrom] = useState("");
+  const [histTo, setHistTo] = useState("");
 
   const imc = useMemo(() => {
     const p = Number(peso), t = Number(talla);
@@ -451,23 +479,59 @@ function PatientApp({ user, records, onSave }: { user: User; records: TriajeReco
     return "";
   }, [peso, talla]);
 
-  const last = records[0];
+  const sortedRecords = useMemo(() => [...records].sort((a, b) => b.createdAt - a.createdAt), [records]);
+  const last = sortedRecords[0];
 
-  const save = () => {
-    if (!glucosa) { setTab(0); return notify("Registra la glucemia capilar."); }
-    const rec: TriajeRecord = {
-      id: crypto.randomUUID(), createdAt: Date.now(),
+  const pendingRec = useMemo((): TriajeRecord | null => {
+    if (!glucosa) return null;
+    return {
+      id: "pending", createdAt: Date.now(),
       dni: user.dni, nombres: user.nombres, edad: user.edad, posta: user.posta,
       pa, fc, peso, talla, imc, glucosa, estadoGlucosa, sintomas,
     };
-    onSave(rec);
+  }, [user, pa, fc, peso, talla, imc, glucosa, estadoGlucosa, sintomas]);
+
+  const filteredHistory = useMemo(() => {
+    return sortedRecords.filter((r) => {
+      if (histRisk && classify(r) !== histRisk) return false;
+      if (histFrom) {
+        const from = new Date(histFrom).setHours(0, 0, 0, 0);
+        if (r.createdAt < from) return false;
+      }
+      if (histTo) {
+        const to = new Date(histTo).setHours(23, 59, 59, 999);
+        if (r.createdAt > to) return false;
+      }
+      return true;
+    });
+  }, [sortedRecords, histRisk, histFrom, histTo]);
+
+  const histTotalPages = Math.max(1, Math.ceil(filteredHistory.length / HISTORY_PAGE_SIZE));
+  const histPageSafe = Math.min(histPage, histTotalPages);
+  const pagedHistory = filteredHistory.slice((histPageSafe - 1) * HISTORY_PAGE_SIZE, histPageSafe * HISTORY_PAGE_SIZE);
+
+  useEffect(() => { setHistPage(1); }, [histRisk, histFrom, histTo]);
+
+  const requestSave = () => {
+    if (!glucosa) { setTab(0); return notify("Registra la glucemia capilar."); }
+    setConfirmOpen(true);
+  };
+
+  const confirmSave = () => {
+    if (!pendingRec) return;
+    onSave({ ...pendingRec, id: crypto.randomUUID() });
     setPa(""); setFc(""); setPeso(""); setTalla(""); setGlucosa(""); setSintomas([]); setEstadoGlucosa("Ayunas");
     setTab(0);
+    setConfirmOpen(false);
     notify("✓ Ficha enviada al centro de salud.");
   };
+
   const notify = (m: string) => { setToast(m); setTimeout(() => setToast(null), 2500); };
 
   const toggleSintoma = (s: string) => setSintomas((p) => p.includes(s) ? p.filter((x) => x !== s) : [...p, s]);
+
+  const clearHistFilters = () => { setHistRisk(""); setHistFrom(""); setHistTo(""); };
+  const hasHistFilters = histRisk || histFrom || histTo;
 
   return (
     <div className="space-y-6">
@@ -480,7 +544,7 @@ function PatientApp({ user, records, onSave }: { user: User; records: TriajeReco
           </div>
           <div className="grid grid-cols-3 gap-3">
             <MiniStat label="Última glucosa" value={last ? `${last.glucosa}` : "—"} sub={last ? last.estadoGlucosa : "mg/dL"} />
-            <MiniStat label="Reportes" value={String(records.length)} sub="totales" />
+            <MiniStat label="Fichas" value={String(records.length)} sub="totales" />
             <MiniStat label="Riesgo" value={last ? classify(last) : "—"} sub="último" />
           </div>
         </div>
@@ -548,34 +612,96 @@ function PatientApp({ user, records, onSave }: { user: User; records: TriajeReco
           {tab < PATIENT_TABS.length - 1 ? (
             <button type="button" onClick={() => setTab((i) => i + 1)} className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:opacity-90" style={{ background: "var(--gradient-hero)" }}>Siguiente →</button>
           ) : (
-            <button type="button" onClick={save} className="rounded-xl px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:opacity-90" style={{ background: "var(--gradient-hero)" }}>✓ Enviar Reporte</button>
+            <button type="button" onClick={requestSave} className="rounded-xl px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:opacity-90" style={{ background: "var(--gradient-hero)" }}>✓ Enviar ficha</button>
           )}
         </div>
       </section>
 
       {records.length > 0 && (
         <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold tracking-tight">Mi historial</h3>
-          <div className="overflow-x-auto">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold tracking-tight">Mi historial</h3>
+            <span className="text-xs text-muted-foreground">{filteredHistory.length} registro{filteredHistory.length !== 1 ? "s" : ""}</span>
+          </div>
+
+          <FilterBar
+            risk={histRisk}
+            onRiskChange={(v) => setHistRisk(v as "" | "alto" | "medio" | "normal")}
+            from={histFrom}
+            to={histTo}
+            onFromChange={setHistFrom}
+            onToChange={setHistTo}
+            onClear={clearHistFilters}
+            hasFilters={!!hasHistFilters}
+          />
+
+          <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
                 <tr><th className="py-2">Fecha</th><th>Glucosa</th><th>Estado</th><th>Síntomas</th><th>Riesgo</th></tr>
               </thead>
               <tbody>
-                {records.map((r) => (
-                  <tr key={r.id} className="border-t border-border">
-                    <td className="py-2">{new Date(r.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" })}</td>
-                    <td className="font-semibold">{r.glucosa} mg/dL</td>
-                    <td>{r.estadoGlucosa}</td>
-                    <td>{r.sintomas.length || "—"}</td>
-                    <td><RiskBadge level={classify(r)} /></td>
-                  </tr>
-                ))}
+                {pagedHistory.map((r) => {
+                  const level = classify(r);
+                  return (
+                    <tr key={r.id} className={`border-t border-border ${rowRiskClass(level)}`}>
+                      <td className="py-2">{new Date(r.createdAt).toLocaleString("es-PE", { dateStyle: "short", timeStyle: "short" })}</td>
+                      <td className="font-semibold">{r.glucosa} mg/dL</td>
+                      <td>{r.estadoGlucosa}</td>
+                      <td>{r.sintomas.length || "—"}</td>
+                      <td><RiskBadge level={level} /></td>
+                    </tr>
+                  );
+                })}
+                {pagedHistory.length === 0 && (
+                  <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">No hay registros con estos filtros.</td></tr>
+                )}
               </tbody>
             </table>
           </div>
+
+          {filteredHistory.length > HISTORY_PAGE_SIZE && (
+            <PaginationBar page={histPageSafe} totalPages={histTotalPages} onPage={setHistPage} />
+          )}
         </section>
       )}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="max-w-md rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar envío de triaje</AlertDialogTitle>
+            <AlertDialogDescription>
+              Revisa que los datos sean correctos antes de enviar tu ficha al centro de salud.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {pendingRec && (
+            <div className="space-y-3 rounded-xl border border-border bg-[var(--color-brand-050)] p-4 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <SummaryItem label="Glucemia" value={`${pendingRec.glucosa} mg/dL`} highlight />
+                <SummaryItem label="Estado" value={pendingRec.estadoGlucosa} />
+                <SummaryItem label="Presión" value={pendingRec.pa || "—"} />
+                <SummaryItem label="FC" value={pendingRec.fc ? `${pendingRec.fc} lpm` : "—"} />
+                <SummaryItem label="Peso" value={pendingRec.peso ? `${pendingRec.peso} kg` : "—"} />
+                <SummaryItem label="IMC" value={pendingRec.imc || "—"} />
+              </div>
+              <div>
+                <span className="text-xs font-medium text-muted-foreground">Síntomas</span>
+                <p className="mt-0.5">{pendingRec.sintomas.length ? pendingRec.sintomas.join(", ") : "Ninguno"}</p>
+              </div>
+              <div className="flex items-center gap-2 border-t border-border pt-3">
+                <span className="text-xs font-medium text-muted-foreground">Riesgo estimado:</span>
+                <RiskBadge level={classify(pendingRec)} />
+              </div>
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Revisar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} style={{ background: "var(--color-brand-400)" }}>
+              Confirmar y enviar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {toast && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 rounded-xl border border-border bg-card px-4 py-3 text-sm shadow-xl">{toast}</div>}
     </div>
@@ -592,8 +718,143 @@ function MiniStat({ label, value, sub }: { label: string; value: string; sub: st
   );
 }
 
+// ---------- SHARED UI ----------
+function rowRiskClass(level: string) {
+  if (level === "alto") return "bg-[var(--color-risk-alto-bg)]";
+  if (level === "medio") return "bg-[var(--color-risk-medio-bg)]";
+  return "";
+}
+
+function SummaryItem({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <p className={`font-medium ${highlight ? "text-lg font-bold text-[var(--color-brand-800)]" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function FilterBar({
+  risk, onRiskChange, from, to, onFromChange, onToChange, onClear, hasFilters,
+  search, onSearchChange, posta, onPostaChange, postas,
+}: {
+  risk: string;
+  onRiskChange: (v: string) => void;
+  from: string;
+  to: string;
+  onFromChange: (v: string) => void;
+  onToChange: (v: string) => void;
+  onClear: () => void;
+  hasFilters: boolean;
+  search?: string;
+  onSearchChange?: (v: string) => void;
+  posta?: string;
+  onPostaChange?: (v: string) => void;
+  postas?: string[];
+}) {
+  return (
+    <div className="rounded-xl border border-[var(--color-brand-100)] bg-[var(--color-brand-050)] p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-brand-800)]">
+        <Filter className="h-4 w-4" />
+        Filtros
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {onSearchChange !== undefined && (
+          <label className="relative block sm:col-span-2 lg:col-span-1">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Buscar paciente</span>
+            <Search className="pointer-events-none absolute bottom-2.5 left-3 h-4 w-4 text-muted-foreground" />
+            <input
+              className={`${inputCls} pl-9`}
+              value={search ?? ""}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Nombre o DNI"
+            />
+          </label>
+        )}
+        {postas && onPostaChange && (
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Posta</span>
+            <select className={inputCls} value={posta ?? ""} onChange={(e) => onPostaChange(e.target.value)}>
+              <option value="">Todas</option>
+              {postas.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </label>
+        )}
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Riesgo</span>
+          <select className={inputCls} value={risk} onChange={(e) => onRiskChange(e.target.value)}>
+            <option value="">Todos</option>
+            <option value="alto">Alto</option>
+            <option value="medio">Medio</option>
+            <option value="normal">Normal</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Desde</span>
+          <input type="date" className={inputCls} value={from} onChange={(e) => onFromChange(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Hasta</span>
+          <input type="date" className={inputCls} value={to} onChange={(e) => onToChange(e.target.value)} />
+        </label>
+      </div>
+      {hasFilters && (
+        <button type="button" onClick={onClear} className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-[var(--color-brand-600)] hover:underline">
+          <X className="h-3 w-3" /> Limpiar filtros
+        </button>
+      )}
+    </div>
+  );
+}
+
+function PaginationBar({ page, totalPages, onPage }: { page: number; totalPages: number; onPage: (p: number) => void }) {
+  return (
+    <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+      <span className="text-xs text-muted-foreground">Página {page} de {totalPages}</span>
+      <div className="flex gap-1">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => onPage(page - 1)}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-sm transition hover:bg-muted disabled:opacity-40"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).slice(Math.max(0, page - 3), page + 2).map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onPage(p)}
+            className={`inline-flex h-8 min-w-8 items-center justify-center rounded-lg px-2 text-sm font-medium transition ${
+              p === page ? "text-white shadow-sm" : "border border-border bg-background hover:bg-muted"
+            }`}
+            style={p === page ? { background: "var(--color-brand-400)" } : undefined}
+          >
+            {p}
+          </button>
+        ))}
+        <button
+          type="button"
+          disabled={page >= totalPages}
+          onClick={() => onPage(page + 1)}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-background text-sm transition hover:bg-muted disabled:opacity-40"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ---------- DOCTOR APP ----------
 function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
+  const [docRisk, setDocRisk] = useState<"" | "alto" | "medio" | "normal">("");
+  const [docFrom, setDocFrom] = useState("");
+  const [docTo, setDocTo] = useState("");
+  const [docSearch, setDocSearch] = useState("");
+  const [docPosta, setDocPosta] = useState("");
+  const [docPage, setDocPage] = useState(1);
+
   const sorted = useMemo(() => {
     const order: { [k: string]: number } = { alto: 0, medio: 1, normal: 2 };
     return [...records].sort((a, b) => {
@@ -603,9 +864,35 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
     });
   }, [records]);
 
+  const filtered = useMemo(() => {
+    const q = docSearch.trim().toLowerCase();
+    return sorted.filter((r) => {
+      if (docRisk && classify(r) !== docRisk) return false;
+      if (docPosta && r.posta !== docPosta) return false;
+      if (q && !r.nombres.toLowerCase().includes(q) && !r.dni.includes(q)) return false;
+      if (docFrom) {
+        const from = new Date(docFrom).setHours(0, 0, 0, 0);
+        if (r.createdAt < from) return false;
+      }
+      if (docTo) {
+        const to = new Date(docTo).setHours(23, 59, 59, 999);
+        if (r.createdAt > to) return false;
+      }
+      return true;
+    });
+  }, [sorted, docRisk, docPosta, docSearch, docFrom, docTo]);
+
+  const docTotalPages = Math.max(1, Math.ceil(filtered.length / DOCTOR_PAGE_SIZE));
+  const docPageSafe = Math.min(docPage, docTotalPages);
+  const paged = filtered.slice((docPageSafe - 1) * DOCTOR_PAGE_SIZE, docPageSafe * DOCTOR_PAGE_SIZE);
+
+  useEffect(() => { setDocPage(1); }, [docRisk, docPosta, docSearch, docFrom, docTo]);
+
   const alto = sorted.filter((r) => classify(r) === "alto").length;
   const medio = sorted.filter((r) => classify(r) === "medio").length;
   const normal = sorted.filter((r) => classify(r) === "normal").length;
+  const uniquePatients = new Set(records.map((r) => r.dni)).size;
+  const hasDocFilters = !!(docRisk || docPosta || docSearch || docFrom || docTo);
 
   // Glucose trend (last 7 records chronological)
   const trend = useMemo(() => {
@@ -623,9 +910,9 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
   }, [records]);
 
   const pie = [
-    { name: "Alto", value: alto, color: "oklch(0.62 0.23 25)" },
-    { name: "Medio", value: medio, color: "oklch(0.78 0.17 70)" },
-    { name: "Normal", value: normal, color: "oklch(0.7 0.18 160)" },
+    { name: "Alto", value: alto, color: "var(--color-risk-alto-strong)" },
+    { name: "Medio", value: medio, color: "var(--color-risk-medio-strong)" },
+    { name: "Normal", value: normal, color: "var(--color-risk-normal-strong)" },
   ];
 
   return (
@@ -637,7 +924,7 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
       </section>
 
       <div className="grid gap-4 sm:grid-cols-4">
-        <Stat label="Pacientes registrados" value={String(new Set(records.map((r) => r.dni)).size)} />
+        <Stat label="Pacientes activos" value={String(uniquePatients)} />
         <Stat label="Fichas totales" value={String(records.length)} />
         <Stat label="En alerta" value={String(alto)} accent="alert" />
         <Stat label="Normales" value={String(normal)} accent="ok" />
@@ -704,20 +991,28 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        <header className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div>
-            <h3 className="text-lg font-semibold tracking-tight">Tabla de Triaje priorizada</h3>
-            <p className="text-sm text-muted-foreground">Ordenada por nivel de riesgo</p>
-          </div>
-          <button
-            onClick={() => exportTriajePDF(sorted)}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-50"
-            style={{ background: "var(--gradient-hero)" }}
-            disabled={sorted.length === 0}
-          >
-            Exportar PDF
-          </button>
+        <header className="border-b border-border px-6 py-4">
+          <h3 className="text-lg font-semibold tracking-tight">Tabla de Triaje priorizada</h3>
+          <p className="text-sm text-muted-foreground">Ordenada por nivel de riesgo · {filtered.length} ficha{filtered.length !== 1 ? "s" : ""}</p>
         </header>
+
+        <div className="p-4 sm:p-6">
+          <FilterBar
+            risk={docRisk}
+            onRiskChange={(v) => setDocRisk(v as "" | "alto" | "medio" | "normal")}
+            from={docFrom}
+            to={docTo}
+            onFromChange={setDocFrom}
+            onToChange={setDocTo}
+            onClear={() => { setDocRisk(""); setDocPosta(""); setDocSearch(""); setDocFrom(""); setDocTo(""); }}
+            hasFilters={hasDocFilters}
+            search={docSearch}
+            onSearchChange={setDocSearch}
+            posta={docPosta}
+            onPostaChange={setDocPosta}
+            postas={POSTAS}
+          />
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -733,13 +1028,13 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((r) => {
+              {paged.map((r) => {
                 const level = classify(r);
                 const isAlert = level === "alto";
                 const alertSym = r.sintomas.filter((s) => SEVERE_SYMPTOMS.has(s));
                 const fecha = new Date(r.createdAt);
                 return (
-                  <tr key={r.id} className={`border-t border-border ${isAlert ? "bg-destructive/5" : ""}`}>
+                  <tr key={r.id} className={`border-t border-border ${rowRiskClass(level)}`}>
                     <td className="px-6 py-3">
                       <div className="font-medium">{r.nombres}</div>
                       <div className="text-xs text-muted-foreground">DNI {r.dni} · {r.edad}a</div>
@@ -754,7 +1049,7 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
                       {r.sintomas.length === 0 ? <span className="text-xs text-muted-foreground">Ninguno</span> : (
                         <div className="flex flex-wrap gap-1">
                           {(alertSym.length ? alertSym : r.sintomas).slice(0, 3).map((s) => (
-                            <span key={s} className={`rounded-md px-2 py-0.5 text-[11px] ${SEVERE_SYMPTOMS.has(s) ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>{s}</span>
+                            <span key={s} className={`rounded-md px-2 py-0.5 text-[11px] ${SEVERE_SYMPTOMS.has(s) ? "bg-[var(--color-risk-alto-bg)] text-[var(--color-risk-alto-text)]" : "bg-muted text-muted-foreground"}`}>{s}</span>
                           ))}
                           {r.sintomas.length > 3 && <span className="text-[11px] text-muted-foreground">+{r.sintomas.length - 3}</span>}
                         </div>
@@ -762,15 +1057,21 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
                     </td>
                     <td className="px-6 py-3"><RiskBadge level={level} /></td>
                     <td className="px-6 py-3 text-right">
-                      {isAlert ? <button className="rounded-lg bg-destructive px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90">Contactar</button> : <span className="text-xs text-muted-foreground">—</span>}
+                      {isAlert ? <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90" style={{ background: "var(--color-risk-alto-strong)" }}>Contactar</button> : <span className="text-xs text-muted-foreground">—</span>}
                     </td>
                   </tr>
                 );
               })}
-              {sorted.length === 0 && <tr><td colSpan={7} className="px-6 py-10 text-center text-muted-foreground">Sin fichas aún.</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={7} className="px-6 py-10 text-center text-muted-foreground">{hasDocFilters ? "Sin resultados con estos filtros." : "Sin fichas aún."}</td></tr>}
             </tbody>
           </table>
         </div>
+
+        {filtered.length > DOCTOR_PAGE_SIZE && (
+          <div className="px-6 pb-4">
+            <PaginationBar page={docPageSafe} totalPages={docTotalPages} onPage={setDocPage} />
+          </div>
+        )}
       </section>
     </div>
   );
@@ -787,72 +1088,23 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
 }
 
 function RiskBadge({ level }: { level: string }) {
-  if (level === "alto") return <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-1 text-xs font-semibold text-destructive"><span className="h-1.5 w-1.5 rounded-full bg-destructive" />Alto</span>;
-  if (level === "medio") return <span className="inline-flex items-center gap-1.5 rounded-full bg-[oklch(0.94_0.1_75)] px-2.5 py-1 text-xs font-semibold text-[oklch(0.45_0.15_70)]"><span className="h-1.5 w-1.5 rounded-full bg-[oklch(0.7_0.17_75)]" />Medio</span>;
-  return <span className="inline-flex items-center gap-1.5 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-[oklch(0.35_0.15_155)]"><span className="h-1.5 w-1.5 rounded-full bg-success" />Normal</span>;
-}
-
-function exportTriajePDF(rows: TriajeRecord[]) {
-  const now = new Date();
-  const fecha = now.toLocaleString("es-PE", { dateStyle: "long", timeStyle: "short" });
-  const labels: { [k: string]: string } = { alto: "Alto", medio: "Medio", normal: "Normal" };
-  const colors: { [k: string]: string } = { alto: "#c0392b", medio: "#b7791f", normal: "#1f7a3a" };
-  const body = rows.map((r, i) => {
-    const lvl = classify(r);
-    const sint = r.sintomas.length ? r.sintomas.join(", ") : "Ninguno";
-    const f = new Date(r.createdAt);
-    const fStr = `${f.toLocaleDateString("es-PE")} ${f.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}`;
-    return `<tr style="background:${i % 2 ? "#f8fafc" : "#fff"}">
-      <td>${i + 1}</td>
-      <td><strong>${escapeHtml(r.nombres)}</strong><br/><span style="color:#666;font-size:11px">DNI ${escapeHtml(r.dni)} · ${r.edad}a</span></td>
-      <td style="font-size:11px;white-space:nowrap">${fStr}</td>
-      <td>${escapeHtml(r.posta || "—")}</td>
-      <td><strong>${r.glucosa}</strong> mg/dL<br/><span style="color:#666;font-size:11px">${escapeHtml(r.estadoGlucosa)}</span></td>
-      <td style="color:${colors[lvl]};font-weight:600">${labels[lvl]}</td>
-      <td style="font-size:11px">${escapeHtml(sint)}</td>
-    </tr>`;
-  }).join("");
-  const alto = rows.filter((r) => classify(r) === "alto").length;
-  const medio = rows.filter((r) => classify(r) === "medio").length;
-  const normal = rows.filter((r) => classify(r) === "normal").length;
-  const html = `<!doctype html><html><head><meta charset="utf-8"/><title>Triaje TeleGluc — ${fecha}</title>
-    <style>
-      *{box-sizing:border-box}
-      body{font-family:Inter,Roboto,Arial,sans-serif;color:#111;margin:32px;font-size:12px}
-      h1{margin:0 0 4px;font-size:20px;color:#0056b3}
-      .meta{color:#555;margin-bottom:18px;font-size:12px}
-      .summary{display:flex;gap:12px;margin-bottom:18px}
-      .pill{flex:1;border:1px solid #e5e7eb;border-radius:10px;padding:10px 14px}
-      .pill .n{font-size:20px;font-weight:700}
-      .pill .l{font-size:11px;color:#555;text-transform:uppercase;letter-spacing:.04em}
-      table{width:100%;border-collapse:collapse}
-      th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #e5e7eb;vertical-align:top}
-      th{background:#0056b3;color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-      footer{margin-top:24px;font-size:10px;color:#777;text-align:center}
-      @media print { body{margin:16mm} }
-    </style></head><body>
-    <h1>TeleGluc — Reporte de Triaje</h1>
-    <div class="meta">Centro de Salud · Generado el ${fecha}</div>
-    <div class="summary">
-      <div class="pill"><div class="l">Total</div><div class="n">${rows.length}</div></div>
-      <div class="pill"><div class="l">Riesgo alto</div><div class="n" style="color:#c0392b">${alto}</div></div>
-      <div class="pill"><div class="l">Riesgo medio</div><div class="n" style="color:#b7791f">${medio}</div></div>
-      <div class="pill"><div class="l">Normal</div><div class="n" style="color:#1f7a3a">${normal}</div></div>
-    </div>
-    <table>
-      <thead><tr><th>#</th><th>Paciente</th><th>Fecha/hora</th><th>Posta</th><th>Glucosa</th><th>Riesgo</th><th>Síntomas</th></tr></thead>
-      <tbody>${body || `<tr><td colspan="7" style="text-align:center;padding:20px;color:#777">Sin fichas</td></tr>`}</tbody>
-    </table>
-    <footer>Lista priorizada por nivel de riesgo · TeleGluc</footer>
-    <script>window.onload=()=>{setTimeout(()=>window.print(),250)}</script>
-    </body></html>`;
-  const w = window.open("", "_blank");
-  if (!w) return;
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-}
-
-function escapeHtml(s: string) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+  if (level === "alto") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold" style={{ background: "var(--color-risk-alto-bg)", borderColor: "var(--color-risk-alto-border)", color: "var(--color-risk-alto-text)" }}>
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--color-risk-alto-strong)" }} />Alto
+      </span>
+    );
+  }
+  if (level === "medio") {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold" style={{ background: "var(--color-risk-medio-bg)", borderColor: "var(--color-risk-medio-border)", color: "var(--color-risk-medio-text)" }}>
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--color-risk-medio-strong)" }} />Medio
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold" style={{ background: "var(--color-risk-normal-bg)", borderColor: "var(--color-risk-normal-border)", color: "var(--color-risk-normal-text)" }}>
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--color-risk-normal-strong)" }} />Normal
+    </span>
+  );
 }
