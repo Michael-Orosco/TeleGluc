@@ -1,15 +1,10 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".output/public",
-  "functions": {
-    "api/server.js": {
-      "runtime": "nodejs20.x"
-    }
-  },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/api/server.js"
+      "source": "/(.*)",
+      "destination": "/.output/server/index.mjs"
     }
   ]
 }
