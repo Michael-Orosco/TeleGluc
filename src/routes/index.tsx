@@ -755,16 +755,16 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
       <div className="flex items-center justify-between border-t border-border pt-4">
         <button
           type="button"
-          onClick={() => { setErr(null); setStep((s) => Math.max(0, s - 1)); }}
+          onClick={prev}
           disabled={step === 0}
           className="rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-40"
         >
           ← Anterior
         </button>
-        {step < STEPS.length - 1 ? (
+        {step < PAC_STEPS.length - 1 ? (
           <button
             type="button"
-            onClick={() => { setErr(null); setStep((s) => s + 1); }}
+            onClick={next}
             className="rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
             style={{ background: "var(--gradient-hero)" }}
           >
