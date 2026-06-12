@@ -59,6 +59,8 @@ type User = {
   tipoDiabetes?: string;
   tiempoDiagnostico?: string;
   otrasEnfermedades?: string[];
+  otrasEnfermedadesOtro?: string;
+  sintomasIniciales?: string[];
   medicamentos?: string;
   usaInsulina?: string;
   cuantaInsulina?: string;
@@ -565,7 +567,8 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
   const [u, setU] = useState<User>({
     dni: "", password: "", nombres: "", fechaNac: "", edad: "", telefono: "",
     direccion: "", posta: POSTAS[0], role: "paciente",
-    tipoDiabetes: "", tiempoDiagnostico: "", otrasEnfermedades: [],
+    tipoDiabetes: "", tiempoDiagnostico: "", otrasEnfermedades: [], otrasEnfermedadesOtro: "",
+    sintomasIniciales: [],
     medicamentos: "", usaInsulina: "", cuantaInsulina: "", cumpleDosis: "",
     actividadFisica: "", frecuenciaActividad: "", planAlimentacion: "", fuma: "", alcohol: "",
   });
@@ -653,6 +656,11 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
                 <CheckPill key={enf} label={enf} checked={(u.otrasEnfermedades ?? []).includes(enf)} onChange={() => toggleEnf(enf)} />
               ))}
             </div>
+            <div className="mt-2">
+              <Field label="Otros (especifique)">
+                <input className={inputCls} value={u.otrasEnfermedadesOtro ?? ""} onChange={(e) => set("otrasEnfermedadesOtro", e.target.value)} placeholder="Otra condición de salud…" />
+              </Field>
+            </div>
           </div>
         </div>
       )}
@@ -697,13 +705,11 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
               "Pérdida de peso", "Visión borrosa", "Cansancio extremo",
               "Mareos o sudoración fría", "Heridas que tardan en sanar", "Adormecimiento en pies",
             ].map((s) => {
-              const key = "_snt_" + s;
-              const checked = (u.otrasEnfermedades ?? []).includes(key);
+              const checked = (u.sintomasIniciales ?? []).includes(s);
               return (
                 <CheckPill key={s} label={s} checked={checked} onChange={(v) => {
-                  const rest = (u.otrasEnfermedades ?? []).filter((x) => !x.startsWith("_snt_"));
-                  const snts = (u.otrasEnfermedades ?? []).filter((x) => x.startsWith("_snt_"));
-                  set("otrasEnfermedades", v ? [...rest, ...snts, key] : [...rest, ...snts.filter((x) => x !== key)]);
+                  const cur = u.sintomasIniciales ?? [];
+                  set("sintomasIniciales", v ? [...cur, s] : cur.filter((x) => x !== s));
                 }} />
               );
             })}
