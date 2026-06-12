@@ -336,8 +336,9 @@ function AuthScreen({
   onRegister: (u: User) => void;
   onResetPassword: (dni: string, pw: string) => void;
 }) {
+  const wide = mode === "register";
   return (
-    <div className="mx-auto max-w-md py-8">
+    <div className={`mx-auto py-8 ${wide ? "max-w-lg" : "max-w-md"}`}>
       <button onClick={onBack} className="mb-4 text-sm text-muted-foreground hover:text-foreground">← Volver al inicio</button>
       <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-2xl">
         <div className="absolute inset-x-0 top-0 h-1.5" style={{ background: role === "medico" ? "var(--gradient-card)" : "var(--gradient-hero)" }} />
@@ -352,7 +353,7 @@ function AuthScreen({
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {mode === "login" && "Ingresa con tu DNI y contraseña."}
-            {mode === "register" && "Completa todos los campos para registrarte."}
+            {mode === "register" && "Completa el formulario para registrarte."}
             {mode === "forgot" && "Ingresa tu DNI para restablecer."}
           </p>
 
@@ -416,24 +417,43 @@ function LoginForm({ role, users, onLogin }: { role: "paciente" | "medico"; user
 
 function CheckPill({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition select-none ${checked ? "border-primary bg-primary/8 text-primary font-medium" : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}>
-      <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition ${checked ? "border-primary bg-primary" : "border-border bg-background"}`}>
-        {checked && <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 fill-white"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`flex w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-all select-none text-left ${
+        checked
+          ? "border-primary bg-primary/10 text-primary font-medium shadow-sm"
+          : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/40"
+      }`}
+    >
+      <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border-2 transition-all ${checked ? "border-primary bg-primary" : "border-muted-foreground/40"}`}>
+        {checked && (
+          <svg viewBox="0 0 12 9" className="h-3 w-3" fill="none">
+            <path d="M1 4.5L4.5 8L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        )}
       </span>
       {label}
-    </label>
+    </button>
   );
 }
 
-// ---- Radio pill ----
-function RadioPill({ label, name, checked, onChange }: { label: string; name: string; checked: boolean; onChange: () => void }) {
+function RadioPill({ label, checked, onChange }: { label: string; name?: string; checked: boolean; onChange: () => void }) {
   return (
-    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition select-none ${checked ? "border-primary bg-primary/8 text-primary font-medium" : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}>
-      <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 transition ${checked ? "border-primary" : "border-border"}`}>
-        {checked && <span className="h-2 w-2 rounded-full bg-primary" />}
+    <button
+      type="button"
+      onClick={onChange}
+      className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-all select-none ${
+        checked
+          ? "border-primary bg-primary/10 text-primary font-medium shadow-sm"
+          : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/40"
+      }`}
+    >
+      <span className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all ${checked ? "border-primary" : "border-muted-foreground/40"}`}>
+        {checked && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
       </span>
       {label}
-    </label>
+    </button>
   );
 }
 
