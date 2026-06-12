@@ -408,32 +408,18 @@ function LoginForm({ role, users, onLogin }: { role: "paciente" | "medico"; user
       <Field label="Contraseña"><input type="password" className={inputCls} value={pw} onChange={(e) => setPw(e.target.value)} required /></Field>
       {err && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</div>}
       <button type="submit" className={btnPrimary()} style={{ background: "var(--gradient-hero)" }}>Entrar</button>
-      <p className="rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-center text-[11px] text-muted-foreground">
-        🔑 Cuenta demo precargada · DNI: <span className="font-semibold text-foreground">{demoDni}</span> · Clave: <span className="font-semibold text-foreground">{demoPw}</span>
-      </p>
     </form>
   );
 }
 
-// ---- Sección con título para el formulario de registro ----
-function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-border" />
-        <span className="rounded-full border border-border bg-muted px-3 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{title}</span>
-        <div className="h-px flex-1 bg-border" />
-      </div>
-      {children}
-    </div>
-  );
-}
 
-// ---- Checkbox pill ----
+
 function CheckPill({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
   return (
-    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition select-none ${checked ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}>
-      <input type="checkbox" className="h-4 w-4 accent-primary" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition select-none ${checked ? "border-primary bg-primary/8 text-primary font-medium" : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}>
+      <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border transition ${checked ? "border-primary bg-primary" : "border-border bg-background"}`}>
+        {checked && <svg viewBox="0 0 10 8" className="h-2.5 w-2.5 fill-white"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+      </span>
       {label}
     </label>
   );
@@ -442,8 +428,10 @@ function CheckPill({ label, checked, onChange }: { label: string; checked: boole
 // ---- Radio pill ----
 function RadioPill({ label, name, checked, onChange }: { label: string; name: string; checked: boolean; onChange: () => void }) {
   return (
-    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition select-none ${checked ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}>
-      <input type="radio" name={name} className="h-4 w-4 accent-primary" checked={checked} onChange={onChange} />
+    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition select-none ${checked ? "border-primary bg-primary/8 text-primary font-medium" : "border-border bg-background text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}>
+      <span className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border-2 transition ${checked ? "border-primary" : "border-border"}`}>
+        {checked && <span className="h-2 w-2 rounded-full bg-primary" />}
+      </span>
       {label}
     </label>
   );
@@ -466,73 +454,91 @@ function RegisterFormMedico({ users, onRegister }: { users: User[]; onRegister: 
   const set = <K extends keyof User>(k: K, v: User[K]) => setU((p) => ({ ...p, [k]: v }));
 
   return (
-    <form className="space-y-5"
+    <form className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!u.dni || !u.password || !u.nombres || !u.cmp || !u.especialidad || !u.renae || !u.redSalud || !u.horarioAtencion) return setErr("Completa todos los campos obligatorios.");
+        if (!u.dni || !u.password || !u.nombres || !u.cmp || !u.especialidad || !u.renae || !u.redSalud || !u.horarioAtencion)
+          return setErr("Completa todos los campos obligatorios.");
         if (u.password !== pw2) return setErr("Las contraseñas no coinciden.");
         if (users.some((x) => x.dni === u.dni)) return setErr("Ya existe una cuenta con ese DNI.");
         onRegister(u);
       }}
     >
-      <FormSection title="Identificación">
-        <Field label="Nombre completo">
-          <input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} placeholder="Dr. Juan Pérez López" required />
+      <Field label="Nombre completo">
+        <input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} placeholder="Dr. Juan Pérez López" required />
+      </Field>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="DNI">
+          <input className={inputCls} value={u.dni} onChange={(e) => set("dni", e.target.value)} placeholder="00000000" required />
         </Field>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="DNI">
-            <input className={inputCls} value={u.dni} onChange={(e) => set("dni", e.target.value)} placeholder="00000000" required />
-          </Field>
-          <Field label="Teléfono">
-            <input className={inputCls} value={u.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="9XXXXXXXX" required />
-          </Field>
-        </div>
-      </FormSection>
+        <Field label="Teléfono">
+          <input className={inputCls} value={u.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="9XXXXXXXX" required />
+        </Field>
+      </div>
 
-      <FormSection title="Datos profesionales">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="CMP (Colegio Médico del Perú)">
-            <input className={inputCls} value={u.cmp} onChange={(e) => set("cmp", e.target.value)} placeholder="CMP-XXXXXX" required />
-          </Field>
-          <Field label="Especialidad">
-            <input className={inputCls} value={u.especialidad} onChange={(e) => set("especialidad", e.target.value)} placeholder="Ej: Endocrinología" required />
-          </Field>
-          <Field label="Código RENAE">
-            <input className={inputCls} value={u.renae} onChange={(e) => set("renae", e.target.value)} placeholder="RENAE-XXXXXX" required />
-          </Field>
-          <Field label="Red de salud / DIRESA">
-            <input className={inputCls} value={u.redSalud} onChange={(e) => set("redSalud", e.target.value)} placeholder="DIRESA Lima Ciudad" required />
-          </Field>
-        </div>
-        <Field label="Horario de atención">
-          <input className={inputCls} value={u.horarioAtencion} onChange={(e) => set("horarioAtencion", e.target.value)} placeholder="Lun–Vie 8:00–14:00" required />
-        </Field>
-        <Field label="Posta / Centro de salud">
-          <select className={inputCls} value={u.posta} onChange={(e) => set("posta", e.target.value)}>
-            {POSTAS.map((p) => <option key={p}>{p}</option>)}
-          </select>
-        </Field>
-      </FormSection>
+      <div className="border-t border-border pt-1" />
 
-      <FormSection title="Acceso">
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Contraseña">
-            <input type="password" className={inputCls} value={u.password} onChange={(e) => set("password", e.target.value)} required />
-          </Field>
-          <Field label="Confirmar contraseña">
-            <input type="password" className={inputCls} value={pw2} onChange={(e) => setPw2(e.target.value)} required />
-          </Field>
-        </div>
-      </FormSection>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="CMP">
+          <input className={inputCls} value={u.cmp} onChange={(e) => set("cmp", e.target.value)} placeholder="CMP-XXXXXX" required />
+        </Field>
+        <Field label="Especialidad">
+          <input className={inputCls} value={u.especialidad} onChange={(e) => set("especialidad", e.target.value)} placeholder="Endocrinología" required />
+        </Field>
+        <Field label="Código RENAE">
+          <input className={inputCls} value={u.renae} onChange={(e) => set("renae", e.target.value)} placeholder="RENAE-XXXXXX" required />
+        </Field>
+        <Field label="Red de salud / DIRESA">
+          <input className={inputCls} value={u.redSalud} onChange={(e) => set("redSalud", e.target.value)} placeholder="DIRESA Lima Ciudad" required />
+        </Field>
+      </div>
+      <Field label="Horario de atención">
+        <input className={inputCls} value={u.horarioAtencion} onChange={(e) => set("horarioAtencion", e.target.value)} placeholder="Lun–Vie 8:00–14:00" required />
+      </Field>
+      <Field label="Posta / Centro de salud">
+        <select className={inputCls} value={u.posta} onChange={(e) => set("posta", e.target.value)}>
+          {POSTAS.map((p) => <option key={p}>{p}</option>)}
+        </select>
+      </Field>
+
+      <div className="border-t border-border pt-1" />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Contraseña">
+          <input type="password" className={inputCls} value={u.password} onChange={(e) => set("password", e.target.value)} required />
+        </Field>
+        <Field label="Confirmar contraseña">
+          <input type="password" className={inputCls} value={pw2} onChange={(e) => setPw2(e.target.value)} required />
+        </Field>
+      </div>
 
       {err && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</div>}
-      <button type="submit" className={btnPrimary()} style={{ background: "var(--gradient-hero)" }}>Crear cuenta médico</button>
+      <button type="submit" className={btnPrimary()} style={{ background: "var(--gradient-hero)" }}>Crear cuenta</button>
     </form>
   );
 }
 
-// ---- REGISTRO PACIENTE (formulario completo) ----
+// ---- REGISTRO PACIENTE (formulario completo en pasos) ----
 const ENFERMEDADES_LIST = ["Hipertensión", "Colesterol alto", "Problemas renales", "Ninguna"];
+const PAC_STEPS = ["Datos", "Antecedentes", "Tratamiento", "Síntomas", "Estilo de vida", "Acceso"] as const;
+
+function StepDots({ current, total }: { current: number; total: number }) {
+  return (
+    <div className="mb-1 flex items-center justify-between">
+      <span className="text-xs font-medium text-muted-foreground">
+        Paso {current + 1} de {total} — <span className="text-foreground font-semibold">{PAC_STEPS[current]}</span>
+      </span>
+      <div className="flex gap-1.5">
+        {Array.from({ length: total }).map((_, i) => (
+          <span
+            key={i}
+            className={`block rounded-full transition-all ${i === current ? "h-2 w-6 bg-primary" : i < current ? "h-2 w-2 bg-primary/40" : "h-2 w-2 bg-border"}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister: (u: User) => void }) {
   const [step, setStep] = useState(0);
@@ -546,14 +552,13 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
   const [pw2, setPw2] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const set = <K extends keyof User>(k: K, v: User[K]) => setU((p) => ({ ...p, [k]: v }));
+
   const toggleEnf = (enf: string) => {
     const cur = u.otrasEnfermedades ?? [];
     if (enf === "Ninguna") { set("otrasEnfermedades", ["Ninguna"]); return; }
     const filtered = cur.filter((e) => e !== "Ninguna");
     set("otrasEnfermedades", filtered.includes(enf) ? filtered.filter((e) => e !== enf) : [...filtered, enf]);
   };
-
-  const STEPS = ["Datos personales", "Antecedentes", "Tratamiento", "Síntomas recientes", "Estilo de vida", "Acceso"];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -564,51 +569,37 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
     onRegister(u);
   };
 
-  return (
-    <form className="space-y-5" onSubmit={handleSubmit}>
-      {/* Stepper */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-1">
-        {STEPS.map((s, i) => (
-          <div key={s} className="flex min-w-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setStep(i)}
-              className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
-                i === step ? "text-white shadow-sm" : i < step ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-              }`}
-              style={i === step ? { background: "var(--gradient-hero)" } : undefined}
-            >
-              {i + 1}. {s}
-            </button>
-            {i < STEPS.length - 1 && <div className={`h-px w-3 flex-shrink-0 ${i < step ? "bg-primary/40" : "bg-border"}`} />}
-          </div>
-        ))}
-      </div>
+  const next = () => { setErr(null); setStep((s) => Math.min(PAC_STEPS.length - 1, s + 1)); };
+  const prev = () => { setErr(null); setStep((s) => Math.max(0, s - 1)); };
 
-      {/* Step 0: Datos personales */}
+  return (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <StepDots current={step} total={PAC_STEPS.length} />
+
+      {/* Paso 0: Datos personales */}
       {step === 0 && (
         <div className="space-y-3">
-          <Field label="Nombres y Apellidos *">
-            <input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} placeholder="Ej: María Elena Vargas" required />
+          <Field label="Nombre completo">
+            <input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} placeholder="María Elena Vargas" required />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="DNI / Documento de Identidad *">
+            <Field label="DNI">
               <input className={inputCls} value={u.dni} onChange={(e) => set("dni", e.target.value)} placeholder="00000000" required />
             </Field>
-            <Field label="Teléfono de Contacto *">
+            <Field label="Teléfono">
               <input className={inputCls} value={u.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="9XXXXXXXX" required />
             </Field>
-            <Field label="Fecha de Nacimiento *">
+            <Field label="Nacimiento">
               <input type="date" className={inputCls} value={u.fechaNac} onChange={(e) => set("fechaNac", e.target.value)} required />
             </Field>
-            <Field label="Edad *">
-              <input type="number" className={inputCls} value={u.edad} onChange={(e) => set("edad", e.target.value)} placeholder="Ej: 45" required />
+            <Field label="Edad">
+              <input type="number" className={inputCls} value={u.edad} onChange={(e) => set("edad", e.target.value)} placeholder="45" required />
             </Field>
           </div>
-          <Field label="Dirección *">
+          <Field label="Dirección">
             <input className={inputCls} value={u.direccion} onChange={(e) => set("direccion", e.target.value)} placeholder="Jr. Salud 45, Surquillo" required />
           </Field>
-          <Field label="Posta de Salud">
+          <Field label="Posta de salud">
             <select className={inputCls} value={u.posta} onChange={(e) => set("posta", e.target.value)}>
               {POSTAS.map((p) => <option key={p}>{p}</option>)}
             </select>
@@ -616,28 +607,28 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
         </div>
       )}
 
-      {/* Step 1: Antecedentes y Diagnóstico */}
+      {/* Paso 1: Antecedentes */}
       {step === 1 && (
         <div className="space-y-4">
           <div>
-            <span className="mb-2 block text-sm font-medium">Tipo de Diabetes</span>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <p className="mb-2 text-sm font-medium">Tipo de diabetes</p>
+            <div className="grid grid-cols-2 gap-2">
               {["Tipo 1", "Tipo 2", "Gestacional", "No sé"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="tipoDiabetes" checked={u.tipoDiabetes === opt} onChange={() => set("tipoDiabetes", opt)} />
               ))}
             </div>
           </div>
           <div>
-            <span className="mb-2 block text-sm font-medium">Tiempo desde el diagnóstico</span>
-            <div className="flex flex-wrap gap-2">
+            <p className="mb-2 text-sm font-medium">Tiempo desde el diagnóstico</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               {["Menos de 1 año", "1 a 5 años", "Más de 5 años"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="tiempoDiag" checked={u.tiempoDiagnostico === opt} onChange={() => set("tiempoDiagnostico", opt)} />
               ))}
             </div>
           </div>
           <div>
-            <span className="mb-2 block text-sm font-medium">Otras enfermedades</span>
-            <div className="flex flex-wrap gap-2">
+            <p className="mb-2 text-sm font-medium">Otras enfermedades</p>
+            <div className="grid grid-cols-2 gap-2">
               {ENFERMEDADES_LIST.map((enf) => (
                 <CheckPill key={enf} label={enf} checked={(u.otrasEnfermedades ?? []).includes(enf)} onChange={() => toggleEnf(enf)} />
               ))}
@@ -646,14 +637,14 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
         </div>
       )}
 
-      {/* Step 2: Tratamiento Actual */}
+      {/* Paso 2: Tratamiento */}
       {step === 2 && (
         <div className="space-y-4">
-          <Field label="Medicamentos que toma (Metformina, Glibenclamida, etc.)">
-            <input className={inputCls} value={u.medicamentos ?? ""} onChange={(e) => set("medicamentos", e.target.value)} placeholder="Ej: Metformina 850mg, Glibenclamida 5mg" />
+          <Field label="Medicamentos actuales">
+            <input className={inputCls} value={u.medicamentos ?? ""} onChange={(e) => set("medicamentos", e.target.value)} placeholder="Metformina 850mg, Glibenclamida 5mg…" />
           </Field>
           <div>
-            <span className="mb-2 block text-sm font-medium">¿Usa Insulina?</span>
+            <p className="mb-2 text-sm font-medium">¿Usa insulina?</p>
             <div className="flex gap-2">
               {["Sí", "No"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="insulina" checked={u.usaInsulina === opt} onChange={() => set("usaInsulina", opt)} />
@@ -662,11 +653,11 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
           </div>
           {u.usaInsulina === "Sí" && (
             <Field label="¿Cuál y cuántas unidades?">
-              <input className={inputCls} value={u.cuantaInsulina ?? ""} onChange={(e) => set("cuantaInsulina", e.target.value)} placeholder="Ej: Insulina Glargina 20 UI" />
+              <input className={inputCls} value={u.cuantaInsulina ?? ""} onChange={(e) => set("cuantaInsulina", e.target.value)} placeholder="Insulina Glargina 20 UI" />
             </Field>
           )}
           <div>
-            <span className="mb-2 block text-sm font-medium">¿Cumple con las dosis?</span>
+            <p className="mb-2 text-sm font-medium">¿Cumple las dosis?</p>
             <div className="flex gap-2">
               {["Siempre", "A veces", "Nunca"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="cumpleDosis" checked={u.cumpleDosis === opt} onChange={() => set("cumpleDosis", opt)} />
@@ -676,46 +667,35 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
         </div>
       )}
 
-      {/* Step 3: Síntomas Recientes */}
+      {/* Paso 3: Síntomas */}
       {step === 3 && (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Marca si has presentado alguno en las últimas 2 semanas:</p>
+          <p className="text-sm text-muted-foreground">Marca los síntomas de las últimas 2 semanas</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {[
-              "Mucha sed (Polidipsia)",
-              "Orinar seguido, especialmente de noche (Poliuria)",
-              "Mucha hambre (Polifagia)",
-              "Pérdida de peso sin causa aparente",
-              "Visión borrosa",
-              "Cansancio extremo o debilidad",
-              "Mareos o sudoración fría",
-              "Heridas que tardan en sanar",
-              "Adormecimiento o hincadas en los pies",
+              "Mucha sed", "Orinar seguido de noche", "Mucha hambre",
+              "Pérdida de peso", "Visión borrosa", "Cansancio extremo",
+              "Mareos o sudoración fría", "Heridas que tardan en sanar", "Adormecimiento en pies",
             ].map((s) => {
-              const checked = (u.otrasEnfermedades ?? []).includes("_snt_" + s);
+              const key = "_snt_" + s;
+              const checked = (u.otrasEnfermedades ?? []).includes(key);
               return (
-                <CheckPill
-                  key={s}
-                  label={s}
-                  checked={checked}
-                  onChange={(v) => {
-                    const cur = (u.otrasEnfermedades ?? []).filter((x) => !x.startsWith("_snt_"));
-                    const sntCur = (u.otrasEnfermedades ?? []).filter((x) => x.startsWith("_snt_"));
-                    if (v) set("otrasEnfermedades", [...cur, ...sntCur, "_snt_" + s]);
-                    else set("otrasEnfermedades", [...cur, ...sntCur.filter((x) => x !== "_snt_" + s)]);
-                  }}
-                />
+                <CheckPill key={s} label={s} checked={checked} onChange={(v) => {
+                  const rest = (u.otrasEnfermedades ?? []).filter((x) => !x.startsWith("_snt_"));
+                  const snts = (u.otrasEnfermedades ?? []).filter((x) => x.startsWith("_snt_"));
+                  set("otrasEnfermedades", v ? [...rest, ...snts, key] : [...rest, ...snts.filter((x) => x !== key)]);
+                }} />
               );
             })}
           </div>
         </div>
       )}
 
-      {/* Step 4: Estilo de vida */}
+      {/* Paso 4: Estilo de vida */}
       {step === 4 && (
         <div className="space-y-4">
           <div>
-            <span className="mb-2 block text-sm font-medium">¿Realiza actividad física?</span>
+            <p className="mb-2 text-sm font-medium">Actividad física</p>
             <div className="flex gap-2">
               {["Sí", "No"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="actividad" checked={u.actividadFisica === opt} onChange={() => set("actividadFisica", opt)} />
@@ -723,38 +703,40 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
             </div>
           </div>
           {u.actividadFisica === "Sí" && (
-            <Field label="¿Cuántas veces por semana?">
-              <input type="number" min="1" max="7" className={inputCls} value={u.frecuenciaActividad ?? ""} onChange={(e) => set("frecuenciaActividad", e.target.value)} placeholder="Ej: 3" />
+            <Field label="Veces por semana">
+              <input type="number" min="1" max="7" className={inputCls} value={u.frecuenciaActividad ?? ""} onChange={(e) => set("frecuenciaActividad", e.target.value)} placeholder="3" />
             </Field>
           )}
           <div>
-            <span className="mb-2 block text-sm font-medium">¿Sigue el plan de alimentación?</span>
+            <p className="mb-2 text-sm font-medium">Plan de alimentación</p>
             <div className="flex gap-2">
               {["Sí", "A veces", "No"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="planAlim" checked={u.planAlimentacion === opt} onChange={() => set("planAlimentacion", opt)} />
               ))}
             </div>
           </div>
-          <div>
-            <span className="mb-2 block text-sm font-medium">¿Fuma?</span>
-            <div className="flex gap-2">
-              {["Sí", "No"].map((opt) => (
-                <RadioPill key={opt} label={opt} name="fuma" checked={u.fuma === opt} onChange={() => set("fuma", opt)} />
-              ))}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="mb-2 text-sm font-medium">¿Fuma?</p>
+              <div className="flex gap-2">
+                {["Sí", "No"].map((opt) => (
+                  <RadioPill key={opt} label={opt} name="fuma" checked={u.fuma === opt} onChange={() => set("fuma", opt)} />
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <span className="mb-2 block text-sm font-medium">¿Consume alcohol?</span>
-            <div className="flex gap-2">
-              {["Sí", "No"].map((opt) => (
-                <RadioPill key={opt} label={opt} name="alcohol" checked={u.alcohol === opt} onChange={() => set("alcohol", opt)} />
-              ))}
+            <div>
+              <p className="mb-2 text-sm font-medium">¿Alcohol?</p>
+              <div className="flex gap-2">
+                {["Sí", "No"].map((opt) => (
+                  <RadioPill key={opt} label={opt} name="alcohol" checked={u.alcohol === opt} onChange={() => set("alcohol", opt)} />
+                ))}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Step 5: Acceso */}
+      {/* Paso 5: Acceso */}
       {step === 5 && (
         <div className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
