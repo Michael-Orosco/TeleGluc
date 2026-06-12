@@ -16,7 +16,7 @@ import "crypto";
 import "async_hooks";
 import "stream";
 import "../_libs/isbot.mjs";
-const appCss = "/assets/styles-DQj75sIJ.css";
+const appCss = "/assets/styles-D7gFX-8u.css";
 function reportLovableError(error, context = {}) {
   if (typeof window === "undefined") return;
   window.__lovableEvents?.captureException?.(
@@ -313,7 +313,7 @@ function RootComponent() {
   ] });
 }
 const APP_NAME = "GlucoTech PE";
-const $$splitComponentImporter = () => import("./index-DoYDrlyZ.mjs");
+const $$splitComponentImporter = () => import("./index-D1gB76ST.mjs");
 const Route = createFileRoute("/")({
   head: () => ({
     meta: [{
