@@ -49,6 +49,25 @@ type User = {
   direccion: string;
   posta: string;
   role: "paciente" | "medico";
+  // Campos exclusivos del médico
+  cmp?: string;
+  especialidad?: string;
+  renae?: string;
+  redSalud?: string;
+  horarioAtencion?: string;
+  // Campos adicionales paciente (registro inicial)
+  tipoDiabetes?: string;
+  tiempoDiagnostico?: string;
+  otrasEnfermedades?: string[];
+  medicamentos?: string;
+  usaInsulina?: string;
+  cuantaInsulina?: string;
+  cumpleDosis?: string;
+  actividadFisica?: string;
+  frecuenciaActividad?: string;
+  planAlimentacion?: string;
+  fuma?: string;
+  alcohol?: string;
 };
 
 type TriajeRecord = {
@@ -87,7 +106,7 @@ const LS_SESSION = "glucotech_session_v2";
 const DAY = 86_400_000;
 
 const seedUsers: User[] = [
-  { dni: "11111111", password: "doctor", nombres: "Dr. Gregory House", fechaNac: "1959-06-11", edad: "66", telefono: "987654321", direccion: "Av. Diagnóstico 221B", posta: "San Isidro", role: "medico" },
+  { dni: "11111111", password: "doctor", nombres: "Dr. Gregory House", fechaNac: "1959-06-11", edad: "66", telefono: "987654321", direccion: "Av. Diagnóstico 221B", posta: "San Isidro", role: "medico", cmp: "CMP-045231", especialidad: "Endocrinología", renae: "RENAE-001234", redSalud: "DIRESA Lima Ciudad", horarioAtencion: "Lun–Vie 8:00–14:00" },
   { dni: "72345612", password: "demo2026", nombres: "María Elena Vargas", fechaNac: "1968-04-15", edad: "57", telefono: "999111222", direccion: "Jr. Salud 45, Surquillo", posta: "Surquillo", role: "paciente" },
   { dni: "45678901", password: "paciente1", nombres: "Carlos Mendieta", fechaNac: "1975-09-22", edad: "50", telefono: "988776655", direccion: "Av. Los Olivos 120", posta: "Mirones", role: "paciente" },
   { dni: "33445566", password: "paciente2", nombres: "Rosa Huamán", fechaNac: "1982-01-08", edad: "43", telefono: "977665544", direccion: "Calle Breña 88", posta: "Breña", role: "paciente" },
@@ -370,8 +389,10 @@ function btnPrimary(extra = "") {
 }
 
 function LoginForm({ role, users, onLogin }: { role: "paciente" | "medico"; users: User[]; onLogin: (dni: string) => void }) {
-  const [dni, setDni] = useState("");
-  const [pw, setPw] = useState("");
+  const demoDni = role === "medico" ? "11111111" : "72345612";
+  const demoPw = role === "medico" ? "doctor" : "demo2026";
+  const [dni, setDni] = useState(demoDni);
+  const [pw, setPw] = useState(demoPw);
   const [err, setErr] = useState<string | null>(null);
   return (
     <form
@@ -387,47 +408,392 @@ function LoginForm({ role, users, onLogin }: { role: "paciente" | "medico"; user
       <Field label="Contraseña"><input type="password" className={inputCls} value={pw} onChange={(e) => setPw(e.target.value)} required /></Field>
       {err && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</div>}
       <button type="submit" className={btnPrimary()} style={{ background: "var(--gradient-hero)" }}>Entrar</button>
-      <p className="text-center text-[11px] text-muted-foreground">
-        Cuenta demo: {role === "medico" ? "DNI 11111111 / doctor" : "DNI 72345612 / demo2026"}
+      <p className="rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-2 text-center text-[11px] text-muted-foreground">
+        🔑 Cuenta demo precargada · DNI: <span className="font-semibold text-foreground">{demoDni}</span> · Clave: <span className="font-semibold text-foreground">{demoPw}</span>
       </p>
     </form>
   );
 }
 
+// ---- Sección con título para el formulario de registro ----
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <div className="h-px flex-1 bg-border" />
+        <span className="rounded-full border border-border bg-muted px-3 py-0.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{title}</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ---- Checkbox pill ----
+function CheckPill({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition select-none ${checked ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}>
+      <input type="checkbox" className="h-4 w-4 accent-primary" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      {label}
+    </label>
+  );
+}
+
+// ---- Radio pill ----
+function RadioPill({ label, name, checked, onChange }: { label: string; name: string; checked: boolean; onChange: () => void }) {
+  return (
+    <label className={`flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-sm transition select-none ${checked ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}>
+      <input type="radio" name={name} className="h-4 w-4 accent-primary" checked={checked} onChange={onChange} />
+      {label}
+    </label>
+  );
+}
+
 function RegisterForm({ role, users, onRegister }: { role: "paciente" | "medico"; users: User[]; onRegister: (u: User) => void }) {
-  const [u, setU] = useState<User>({ dni: "", password: "", nombres: "", fechaNac: "", edad: "", telefono: "", direccion: "", posta: POSTAS[0], role });
+  if (role === "medico") return <RegisterFormMedico users={users} onRegister={onRegister} />;
+  return <RegisterFormPaciente users={users} onRegister={onRegister} />;
+}
+
+// ---- REGISTRO MÉDICO ----
+function RegisterFormMedico({ users, onRegister }: { users: User[]; onRegister: (u: User) => void }) {
+  const [u, setU] = useState<User>({
+    dni: "", password: "", nombres: "", fechaNac: "", edad: "", telefono: "",
+    direccion: "", posta: POSTAS[0], role: "medico",
+    cmp: "", especialidad: "", renae: "", redSalud: "", horarioAtencion: "",
+  });
   const [pw2, setPw2] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const set = <K extends keyof User>(k: K, v: User[K]) => setU((p) => ({ ...p, [k]: v }));
+
   return (
-    <form className="space-y-3"
+    <form className="space-y-5"
       onSubmit={(e) => {
         e.preventDefault();
-        if (Object.values(u).some((v) => v === "")) return setErr("Completa todos los campos.");
+        if (!u.dni || !u.password || !u.nombres || !u.cmp || !u.especialidad || !u.renae || !u.redSalud || !u.horarioAtencion) return setErr("Completa todos los campos obligatorios.");
         if (u.password !== pw2) return setErr("Las contraseñas no coinciden.");
         if (users.some((x) => x.dni === u.dni)) return setErr("Ya existe una cuenta con ese DNI.");
         onRegister(u);
       }}
     >
-      <Field label="Nombres y Apellidos"><input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} required /></Field>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="DNI"><input className={inputCls} value={u.dni} onChange={(e) => set("dni", e.target.value)} required /></Field>
-        <Field label="Teléfono"><input className={inputCls} value={u.telefono} onChange={(e) => set("telefono", e.target.value)} required /></Field>
-        <Field label="Fecha de Nacimiento"><input type="date" className={inputCls} value={u.fechaNac} onChange={(e) => set("fechaNac", e.target.value)} required /></Field>
-        <Field label="Edad"><input type="number" className={inputCls} value={u.edad} onChange={(e) => set("edad", e.target.value)} required /></Field>
-      </div>
-      <Field label="Dirección"><input className={inputCls} value={u.direccion} onChange={(e) => set("direccion", e.target.value)} required /></Field>
-      <Field label="Posta de Salud">
-        <select className={inputCls} value={u.posta} onChange={(e) => set("posta", e.target.value)}>
-          {POSTAS.map((p) => <option key={p}>{p}</option>)}
-        </select>
-      </Field>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Contraseña"><input type="password" className={inputCls} value={u.password} onChange={(e) => set("password", e.target.value)} required /></Field>
-        <Field label="Confirmar contraseña"><input type="password" className={inputCls} value={pw2} onChange={(e) => setPw2(e.target.value)} required /></Field>
-      </div>
+      <FormSection title="Identificación">
+        <Field label="Nombre completo">
+          <input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} placeholder="Dr. Juan Pérez López" required />
+        </Field>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="DNI">
+            <input className={inputCls} value={u.dni} onChange={(e) => set("dni", e.target.value)} placeholder="00000000" required />
+          </Field>
+          <Field label="Teléfono">
+            <input className={inputCls} value={u.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="9XXXXXXXX" required />
+          </Field>
+        </div>
+      </FormSection>
+
+      <FormSection title="Datos profesionales">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="CMP (Colegio Médico del Perú)">
+            <input className={inputCls} value={u.cmp} onChange={(e) => set("cmp", e.target.value)} placeholder="CMP-XXXXXX" required />
+          </Field>
+          <Field label="Especialidad">
+            <input className={inputCls} value={u.especialidad} onChange={(e) => set("especialidad", e.target.value)} placeholder="Ej: Endocrinología" required />
+          </Field>
+          <Field label="Código RENAE">
+            <input className={inputCls} value={u.renae} onChange={(e) => set("renae", e.target.value)} placeholder="RENAE-XXXXXX" required />
+          </Field>
+          <Field label="Red de salud / DIRESA">
+            <input className={inputCls} value={u.redSalud} onChange={(e) => set("redSalud", e.target.value)} placeholder="DIRESA Lima Ciudad" required />
+          </Field>
+        </div>
+        <Field label="Horario de atención">
+          <input className={inputCls} value={u.horarioAtencion} onChange={(e) => set("horarioAtencion", e.target.value)} placeholder="Lun–Vie 8:00–14:00" required />
+        </Field>
+        <Field label="Posta / Centro de salud">
+          <select className={inputCls} value={u.posta} onChange={(e) => set("posta", e.target.value)}>
+            {POSTAS.map((p) => <option key={p}>{p}</option>)}
+          </select>
+        </Field>
+      </FormSection>
+
+      <FormSection title="Acceso">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Contraseña">
+            <input type="password" className={inputCls} value={u.password} onChange={(e) => set("password", e.target.value)} required />
+          </Field>
+          <Field label="Confirmar contraseña">
+            <input type="password" className={inputCls} value={pw2} onChange={(e) => setPw2(e.target.value)} required />
+          </Field>
+        </div>
+      </FormSection>
+
       {err && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</div>}
-      <button type="submit" className={btnPrimary()} style={{ background: "var(--gradient-hero)" }}>Crear cuenta</button>
+      <button type="submit" className={btnPrimary()} style={{ background: "var(--gradient-hero)" }}>Crear cuenta médico</button>
+    </form>
+  );
+}
+
+// ---- REGISTRO PACIENTE (formulario completo) ----
+const ENFERMEDADES_LIST = ["Hipertensión", "Colesterol alto", "Problemas renales", "Ninguna"];
+
+function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister: (u: User) => void }) {
+  const [step, setStep] = useState(0);
+  const [u, setU] = useState<User>({
+    dni: "", password: "", nombres: "", fechaNac: "", edad: "", telefono: "",
+    direccion: "", posta: POSTAS[0], role: "paciente",
+    tipoDiabetes: "", tiempoDiagnostico: "", otrasEnfermedades: [],
+    medicamentos: "", usaInsulina: "", cuantaInsulina: "", cumpleDosis: "",
+    actividadFisica: "", frecuenciaActividad: "", planAlimentacion: "", fuma: "", alcohol: "",
+  });
+  const [pw2, setPw2] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const set = <K extends keyof User>(k: K, v: User[K]) => setU((p) => ({ ...p, [k]: v }));
+  const toggleEnf = (enf: string) => {
+    const cur = u.otrasEnfermedades ?? [];
+    if (enf === "Ninguna") { set("otrasEnfermedades", ["Ninguna"]); return; }
+    const filtered = cur.filter((e) => e !== "Ninguna");
+    set("otrasEnfermedades", filtered.includes(enf) ? filtered.filter((e) => e !== enf) : [...filtered, enf]);
+  };
+
+  const STEPS = ["Datos personales", "Antecedentes", "Tratamiento", "Síntomas recientes", "Estilo de vida", "Acceso"];
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!u.dni || !u.password || !u.nombres || !u.fechaNac || !u.edad || !u.telefono || !u.direccion)
+      return setErr("Completa todos los campos obligatorios.");
+    if (u.password !== pw2) return setErr("Las contraseñas no coinciden.");
+    if (users.some((x) => x.dni === u.dni)) return setErr("Ya existe una cuenta con ese DNI.");
+    onRegister(u);
+  };
+
+  return (
+    <form className="space-y-5" onSubmit={handleSubmit}>
+      {/* Stepper */}
+      <div className="flex items-center gap-1 overflow-x-auto pb-1">
+        {STEPS.map((s, i) => (
+          <div key={s} className="flex min-w-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setStep(i)}
+              className={`flex-shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold transition ${
+                i === step ? "text-white shadow-sm" : i < step ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+              }`}
+              style={i === step ? { background: "var(--gradient-hero)" } : undefined}
+            >
+              {i + 1}. {s}
+            </button>
+            {i < STEPS.length - 1 && <div className={`h-px w-3 flex-shrink-0 ${i < step ? "bg-primary/40" : "bg-border"}`} />}
+          </div>
+        ))}
+      </div>
+
+      {/* Step 0: Datos personales */}
+      {step === 0 && (
+        <div className="space-y-3">
+          <Field label="Nombres y Apellidos *">
+            <input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} placeholder="Ej: María Elena Vargas" required />
+          </Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="DNI / Documento de Identidad *">
+              <input className={inputCls} value={u.dni} onChange={(e) => set("dni", e.target.value)} placeholder="00000000" required />
+            </Field>
+            <Field label="Teléfono de Contacto *">
+              <input className={inputCls} value={u.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="9XXXXXXXX" required />
+            </Field>
+            <Field label="Fecha de Nacimiento *">
+              <input type="date" className={inputCls} value={u.fechaNac} onChange={(e) => set("fechaNac", e.target.value)} required />
+            </Field>
+            <Field label="Edad *">
+              <input type="number" className={inputCls} value={u.edad} onChange={(e) => set("edad", e.target.value)} placeholder="Ej: 45" required />
+            </Field>
+          </div>
+          <Field label="Dirección *">
+            <input className={inputCls} value={u.direccion} onChange={(e) => set("direccion", e.target.value)} placeholder="Jr. Salud 45, Surquillo" required />
+          </Field>
+          <Field label="Posta de Salud">
+            <select className={inputCls} value={u.posta} onChange={(e) => set("posta", e.target.value)}>
+              {POSTAS.map((p) => <option key={p}>{p}</option>)}
+            </select>
+          </Field>
+        </div>
+      )}
+
+      {/* Step 1: Antecedentes y Diagnóstico */}
+      {step === 1 && (
+        <div className="space-y-4">
+          <div>
+            <span className="mb-2 block text-sm font-medium">Tipo de Diabetes</span>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {["Tipo 1", "Tipo 2", "Gestacional", "No sé"].map((opt) => (
+                <RadioPill key={opt} label={opt} name="tipoDiabetes" checked={u.tipoDiabetes === opt} onChange={() => set("tipoDiabetes", opt)} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium">Tiempo desde el diagnóstico</span>
+            <div className="flex flex-wrap gap-2">
+              {["Menos de 1 año", "1 a 5 años", "Más de 5 años"].map((opt) => (
+                <RadioPill key={opt} label={opt} name="tiempoDiag" checked={u.tiempoDiagnostico === opt} onChange={() => set("tiempoDiagnostico", opt)} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium">Otras enfermedades</span>
+            <div className="flex flex-wrap gap-2">
+              {ENFERMEDADES_LIST.map((enf) => (
+                <CheckPill key={enf} label={enf} checked={(u.otrasEnfermedades ?? []).includes(enf)} onChange={() => toggleEnf(enf)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Tratamiento Actual */}
+      {step === 2 && (
+        <div className="space-y-4">
+          <Field label="Medicamentos que toma (Metformina, Glibenclamida, etc.)">
+            <input className={inputCls} value={u.medicamentos ?? ""} onChange={(e) => set("medicamentos", e.target.value)} placeholder="Ej: Metformina 850mg, Glibenclamida 5mg" />
+          </Field>
+          <div>
+            <span className="mb-2 block text-sm font-medium">¿Usa Insulina?</span>
+            <div className="flex gap-2">
+              {["Sí", "No"].map((opt) => (
+                <RadioPill key={opt} label={opt} name="insulina" checked={u.usaInsulina === opt} onChange={() => set("usaInsulina", opt)} />
+              ))}
+            </div>
+          </div>
+          {u.usaInsulina === "Sí" && (
+            <Field label="¿Cuál y cuántas unidades?">
+              <input className={inputCls} value={u.cuantaInsulina ?? ""} onChange={(e) => set("cuantaInsulina", e.target.value)} placeholder="Ej: Insulina Glargina 20 UI" />
+            </Field>
+          )}
+          <div>
+            <span className="mb-2 block text-sm font-medium">¿Cumple con las dosis?</span>
+            <div className="flex gap-2">
+              {["Siempre", "A veces", "Nunca"].map((opt) => (
+                <RadioPill key={opt} label={opt} name="cumpleDosis" checked={u.cumpleDosis === opt} onChange={() => set("cumpleDosis", opt)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Síntomas Recientes */}
+      {step === 3 && (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Marca si has presentado alguno en las últimas 2 semanas:</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {[
+              "Mucha sed (Polidipsia)",
+              "Orinar seguido, especialmente de noche (Poliuria)",
+              "Mucha hambre (Polifagia)",
+              "Pérdida de peso sin causa aparente",
+              "Visión borrosa",
+              "Cansancio extremo o debilidad",
+              "Mareos o sudoración fría",
+              "Heridas que tardan en sanar",
+              "Adormecimiento o hincadas en los pies",
+            ].map((s) => {
+              const checked = (u.otrasEnfermedades ?? []).includes("_snt_" + s);
+              return (
+                <CheckPill
+                  key={s}
+                  label={s}
+                  checked={checked}
+                  onChange={(v) => {
+                    const cur = (u.otrasEnfermedades ?? []).filter((x) => !x.startsWith("_snt_"));
+                    const sntCur = (u.otrasEnfermedades ?? []).filter((x) => x.startsWith("_snt_"));
+                    if (v) set("otrasEnfermedades", [...cur, ...sntCur, "_snt_" + s]);
+                    else set("otrasEnfermedades", [...cur, ...sntCur.filter((x) => x !== "_snt_" + s)]);
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Step 4: Estilo de vida */}
+      {step === 4 && (
+        <div className="space-y-4">
+          <div>
+            <span className="mb-2 block text-sm font-medium">¿Realiza actividad física?</span>
+            <div className="flex gap-2">
+              {["Sí", "No"].map((opt) => (
+                <RadioPill key={opt} label={opt} name="actividad" checked={u.actividadFisica === opt} onChange={() => set("actividadFisica", opt)} />
+              ))}
+            </div>
+          </div>
+          {u.actividadFisica === "Sí" && (
+            <Field label="¿Cuántas veces por semana?">
+              <input type="number" min="1" max="7" className={inputCls} value={u.frecuenciaActividad ?? ""} onChange={(e) => set("frecuenciaActividad", e.target.value)} placeholder="Ej: 3" />
+            </Field>
+          )}
+          <div>
+            <span className="mb-2 block text-sm font-medium">¿Sigue el plan de alimentación?</span>
+            <div className="flex gap-2">
+              {["Sí", "A veces", "No"].map((opt) => (
+                <RadioPill key={opt} label={opt} name="planAlim" checked={u.planAlimentacion === opt} onChange={() => set("planAlimentacion", opt)} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium">¿Fuma?</span>
+            <div className="flex gap-2">
+              {["Sí", "No"].map((opt) => (
+                <RadioPill key={opt} label={opt} name="fuma" checked={u.fuma === opt} onChange={() => set("fuma", opt)} />
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium">¿Consume alcohol?</span>
+            <div className="flex gap-2">
+              {["Sí", "No"].map((opt) => (
+                <RadioPill key={opt} label={opt} name="alcohol" checked={u.alcohol === opt} onChange={() => set("alcohol", opt)} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Step 5: Acceso */}
+      {step === 5 && (
+        <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Contraseña *">
+              <input type="password" className={inputCls} value={u.password} onChange={(e) => set("password", e.target.value)} required />
+            </Field>
+            <Field label="Confirmar contraseña *">
+              <input type="password" className={inputCls} value={pw2} onChange={(e) => setPw2(e.target.value)} required />
+            </Field>
+          </div>
+        </div>
+      )}
+
+      {err && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</div>}
+
+      <div className="flex items-center justify-between border-t border-border pt-4">
+        <button
+          type="button"
+          onClick={() => { setErr(null); setStep((s) => Math.max(0, s - 1)); }}
+          disabled={step === 0}
+          className="rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-40"
+        >
+          ← Anterior
+        </button>
+        {step < STEPS.length - 1 ? (
+          <button
+            type="button"
+            onClick={() => { setErr(null); setStep((s) => s + 1); }}
+            className="rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90"
+            style={{ background: "var(--gradient-hero)" }}
+          >
+            Siguiente →
+          </button>
+        ) : (
+          <button type="submit" className="rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90" style={{ background: "var(--gradient-hero)" }}>
+            ✓ Crear cuenta
+          </button>
+        )}
+      </div>
     </form>
   );
 }
