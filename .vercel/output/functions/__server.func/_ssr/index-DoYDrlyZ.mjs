@@ -1,12 +1,12 @@
 import { r as reactExports, j as jsxRuntimeExports } from "../_libs/react.mjs";
-import { A as APP_NAME } from "./router-BgOfPIX5.mjs";
+import { A as APP_NAME } from "./router-BLdfZ12z.mjs";
 import { R as Root2, P as Portal2, C as Content2, T as Title2, D as Description2, a as Cancel, A as Action, O as Overlay2 } from "../_libs/radix-ui__react-alert-dialog.mjs";
 import { c as clsx } from "../_libs/clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
 import { S as Slot } from "../_libs/radix-ui__react-slot.mjs";
 import { c as cva } from "../_libs/class-variance-authority.mjs";
 import { R as ResponsiveContainer, L as LineChart, C as CartesianGrid, X as XAxis, Y as YAxis, T as Tooltip, a as Line, b as Legend, P as PieChart, c as Pie, d as Cell, B as BarChart, e as Bar } from "../_libs/recharts.mjs";
-import { F as Funnel, a as Search, X, C as ChevronLeft, b as ChevronRight } from "../_libs/lucide-react.mjs";
+import { X, F as Funnel, a as Search, C as ChevronLeft, b as ChevronRight } from "../_libs/lucide-react.mjs";
 import "../_libs/tanstack__query-core.mjs";
 import "../_libs/tanstack__react-query.mjs";
 import "../_libs/tanstack__react-router.mjs";
@@ -236,8 +236,8 @@ function DoctorIllustration() {
 const HISTORY_PAGE_SIZE = 5;
 const DOCTOR_PAGE_SIZE = 8;
 const POSTAS = ["Surquillo", "Mirones", "San Isidro", "Breña", "La Victoria", "Barranco"];
-const SYMPTOM_LIST = ["Mucha sed", "Orinar seguido", "Mucha hambre", "Pérdida de peso", "Visión borrosa", "Cansancio extremo", "Mareos/sudoración fría", "Heridas que tardan en sanar", "Adormecimiento en pies"];
-const SEVERE_SYMPTOMS = /* @__PURE__ */ new Set(["Visión borrosa", "Mareos/sudoración fría", "Pérdida de peso", "Heridas que tardan en sanar"]);
+const SYMPTOM_LIST = ["Mucha sed (Polidipsia)", "Orinar seguido, especialmente de noche (Poliuria)", "Mucha hambre (Polifagia)", "Pérdida de peso sin causa aparente", "Visión borrosa", "Cansancio extremo o debilidad", "Mareos o sudoración fría (posible baja de azúcar)", "Heridas que tardan en sanar", "Adormecimiento o hincadas en los pies"];
+const SEVERE_SYMPTOMS = /* @__PURE__ */ new Set(["Visión borrosa", "Mareos o sudoración fría (posible baja de azúcar)", "Pérdida de peso sin causa aparente", "Heridas que tardan en sanar"]);
 function classify(r) {
   const g = Number(r.glucosa);
   const hasSevere = r.sintomas.some((s) => SEVERE_SYMPTOMS.has(s));
@@ -261,7 +261,12 @@ const seedUsers = [{
   telefono: "987654321",
   direccion: "Av. Diagnóstico 221B",
   posta: "San Isidro",
-  role: "medico"
+  role: "medico",
+  cmp: "CMP-045231",
+  especialidad: "Endocrinología",
+  renae: "RENAE-001234",
+  redSalud: "DIRESA Lima Ciudad",
+  horarioAtencion: "Lun–Vie 8:00–14:00"
 }, {
   dni: "72345612",
   password: "demo2026",
@@ -534,8 +539,11 @@ function Index() {
       }), onLogin: (dni) => setScreen({
         name: "app",
         userDni: dni
-      }), onRegister: (u) => {
+      }), onRegister: (u, rec) => {
         setUsers((p) => [...p, u]);
+        if (rec) {
+          setRecords((prev) => [rec, ...prev]);
+        }
         setScreen({
           name: "app",
           userDni: u.dni
@@ -545,7 +553,7 @@ function Index() {
         password: pw
       } : x)) }),
       screen.name === "app" && currentUser?.role === "paciente" && /* @__PURE__ */ jsxRuntimeExports.jsx(PatientApp, { user: currentUser, records: records.filter((r) => r.dni === currentUser.dni), onSave: (r) => setRecords((prev) => [r, ...prev]) }),
-      screen.name === "app" && currentUser?.role === "medico" && /* @__PURE__ */ jsxRuntimeExports.jsx(DoctorApp, { user: currentUser, records }),
+      screen.name === "app" && currentUser?.role === "medico" && /* @__PURE__ */ jsxRuntimeExports.jsx(DoctorApp, { user: currentUser, records, users }),
       screen.name === "app" && !currentUser && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-2xl border border-border bg-card p-8 text-center", children: [
         "Sesión inválida. ",
         /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: logout, className: "text-primary underline", children: "Volver" })
@@ -699,7 +707,8 @@ function AuthScreen({
   onRegister,
   onResetPassword
 }) {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mx-auto max-w-md py-8", children: [
+  const wide = mode === "register";
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `mx-auto py-8 ${wide ? "max-w-lg" : "max-w-md"}`, children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: onBack, className: "mb-4 text-sm text-muted-foreground hover:text-foreground", children: "← Volver al inicio" }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative overflow-hidden rounded-3xl border border-border bg-card shadow-2xl", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-x-0 top-0 h-1.5", style: {
@@ -714,7 +723,7 @@ function AuthScreen({
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "mt-1 text-sm text-muted-foreground", children: [
           mode === "login" && "Ingresa con tu DNI y contraseña.",
-          mode === "register" && "Completa todos los campos para registrarte.",
+          mode === "register" && "Completa el formulario para registrarte.",
           mode === "forgot" && "Ingresa tu DNI para restablecer."
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-6", children: [
@@ -749,9 +758,16 @@ function LoginForm({
   users,
   onLogin
 }) {
-  const [dni, setDni] = reactExports.useState("");
-  const [pw, setPw] = reactExports.useState("");
+  const demoDni = role === "medico" ? "11111111" : "72345612";
+  const demoPw = role === "medico" ? "doctor" : "demo2026";
+  const [dni, setDni] = reactExports.useState(demoDni);
+  const [pw, setPw] = reactExports.useState(demoPw);
   const [err, setErr] = reactExports.useState(null);
+  reactExports.useEffect(() => {
+    setDni(demoDni);
+    setPw(demoPw);
+    setErr(null);
+  }, [role, demoDni, demoPw]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs("form", { className: "space-y-4", onSubmit: (e) => {
     e.preventDefault();
     const u = users.find((x) => x.dni === dni.trim() && x.password === pw && x.role === role);
@@ -764,14 +780,53 @@ function LoginForm({
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "submit", className: btnPrimary(), style: {
       background: "var(--gradient-hero)"
     }, children: "Entrar" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-center text-[11px] text-muted-foreground", children: [
-      "Cuenta demo: ",
-      role === "medico" ? "DNI 11111111 / doctor" : "DNI 72345612 / demo2026"
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "font-semibold text-primary", children: "Acceso de Demostración:" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: () => {
+          setDni(demoDni);
+          setPw(demoPw);
+          setErr(null);
+        }, className: "font-bold text-primary hover:underline", children: "Auto-completar ⚡" })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "mt-1 text-muted-foreground", children: [
+        "DNI: ",
+        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "text-foreground", children: demoDni }),
+        " | Clave: ",
+        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { className: "text-foreground", children: demoPw })
+      ] })
     ] })
+  ] });
+}
+function CheckPill({
+  label,
+  checked,
+  onChange
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: () => onChange(!checked), className: `flex w-full cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-all select-none text-left ${checked ? "border-primary bg-primary/10 text-primary font-medium shadow-sm" : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/40"}`, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border-2 transition-all ${checked ? "border-primary bg-primary" : "border-muted-foreground/40"}`, children: checked && /* @__PURE__ */ jsxRuntimeExports.jsx("svg", { viewBox: "0 0 12 9", className: "h-3 w-3", fill: "none", children: /* @__PURE__ */ jsxRuntimeExports.jsx("path", { d: "M1 4.5L4.5 8L11 1", stroke: "white", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" }) }) }),
+    label
+  ] });
+}
+function RadioPill({
+  label,
+  checked,
+  onChange
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("button", { type: "button", onClick: onChange, className: `flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-all select-none ${checked ? "border-primary bg-primary/10 text-primary font-medium shadow-sm" : "border-border bg-background text-muted-foreground hover:border-primary/40 hover:bg-muted/40"}`, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all ${checked ? "border-primary" : "border-muted-foreground/40"}`, children: checked && /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "h-2.5 w-2.5 rounded-full bg-primary" }) }),
+    label
   ] });
 }
 function RegisterForm({
   role,
+  users,
+  onRegister
+}) {
+  if (role === "medico") return /* @__PURE__ */ jsxRuntimeExports.jsx(RegisterFormMedico, { users, onRegister });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(RegisterFormPaciente, { users, onRegister });
+}
+function RegisterFormMedico({
   users,
   onRegister
 }) {
@@ -784,7 +839,12 @@ function RegisterForm({
     telefono: "",
     direccion: "",
     posta: POSTAS[0],
-    role
+    role: "medico",
+    cmp: "",
+    especialidad: "",
+    renae: "",
+    redSalud: "",
+    horarioAtencion: ""
   });
   const [pw2, setPw2] = reactExports.useState("");
   const [err, setErr] = reactExports.useState(null);
@@ -792,22 +852,28 @@ function RegisterForm({
     ...p,
     [k]: v
   }));
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("form", { className: "space-y-3", onSubmit: (e) => {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("form", { className: "space-y-4", onSubmit: (e) => {
     e.preventDefault();
-    if (Object.values(u).some((v) => v === "")) return setErr("Completa todos los campos.");
+    if (!u.dni || !u.password || !u.nombres || !u.cmp || !u.especialidad || !u.renae || !u.redSalud || !u.horarioAtencion) return setErr("Completa todos los campos obligatorios.");
     if (u.password !== pw2) return setErr("Las contraseñas no coinciden.");
     if (users.some((x) => x.dni === u.dni)) return setErr("Ya existe una cuenta con ese DNI.");
     onRegister(u);
   }, children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Nombres y Apellidos", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.nombres, onChange: (e) => set("nombres", e.target.value), required: true }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Nombre completo", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.nombres, onChange: (e) => set("nombres", e.target.value), placeholder: "Dr. Juan Pérez López", required: true }) }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "DNI", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.dni, onChange: (e) => set("dni", e.target.value), required: true }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Teléfono", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.telefono, onChange: (e) => set("telefono", e.target.value), required: true }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Fecha de Nacimiento", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "date", className: inputCls, value: u.fechaNac, onChange: (e) => set("fechaNac", e.target.value), required: true }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Edad", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", className: inputCls, value: u.edad, onChange: (e) => set("edad", e.target.value), required: true }) })
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "DNI", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.dni, onChange: (e) => set("dni", e.target.value), placeholder: "00000000", required: true }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Teléfono", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.telefono, onChange: (e) => set("telefono", e.target.value), placeholder: "9XXXXXXXX", required: true }) })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Dirección", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.direccion, onChange: (e) => set("direccion", e.target.value), required: true }) }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Posta de Salud", children: /* @__PURE__ */ jsxRuntimeExports.jsx("select", { className: inputCls, value: u.posta, onChange: (e) => set("posta", e.target.value), children: POSTAS.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx("option", { children: p }, p)) }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-border pt-1" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "CMP", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.cmp, onChange: (e) => set("cmp", e.target.value), placeholder: "CMP-XXXXXX", required: true }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Especialidad", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.especialidad, onChange: (e) => set("especialidad", e.target.value), placeholder: "Endocrinología", required: true }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Código RENAES", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.renae, onChange: (e) => set("renae", e.target.value), placeholder: "RENAES-XXXXXX", required: true }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Red de salud / DIRESA", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.redSalud, onChange: (e) => set("redSalud", e.target.value), placeholder: "DIRESA Lima Ciudad", required: true }) })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Horario de atención", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.horarioAtencion, onChange: (e) => set("horarioAtencion", e.target.value), placeholder: "Lun–Vie 8:00–14:00", required: true }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Posta / Centro de salud", children: /* @__PURE__ */ jsxRuntimeExports.jsx("select", { className: inputCls, value: u.posta, onChange: (e) => set("posta", e.target.value), children: POSTAS.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx("option", { children: p }, p)) }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-border pt-1" }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Contraseña", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "password", className: inputCls, value: u.password, onChange: (e) => set("password", e.target.value), required: true }) }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Confirmar contraseña", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "password", className: inputCls, value: pw2, onChange: (e) => setPw2(e.target.value), required: true }) })
@@ -816,6 +882,280 @@ function RegisterForm({
     /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "submit", className: btnPrimary(), style: {
       background: "var(--gradient-hero)"
     }, children: "Crear cuenta" })
+  ] });
+}
+const ENFERMEDADES_LIST = ["Hipertensión", "Colesterol alto", "Problemas renales", "Ninguna"];
+const PAC_STEPS = ["Datos Personales", "Triaje Inicial", "Antecedentes y Diagnóstico", "Tratamiento Actual", "Síntomas Recientes", "Estilo de Vida", "Credenciales de Acceso"];
+function StepDots({
+  current,
+  total
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-xs font-medium text-muted-foreground", children: [
+      "Paso ",
+      current + 1,
+      " de ",
+      total,
+      " — ",
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-foreground font-semibold", children: PAC_STEPS[current] })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-1.5", children: Array.from({
+      length: total
+    }).map((_, i) => /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `block rounded-full transition-all ${i === current ? "h-2 w-6 bg-primary" : i < current ? "h-2 w-2 bg-primary/40" : "h-2 w-2 bg-border"}` }, i)) })
+  ] });
+}
+function RegisterFormPaciente({
+  users,
+  onRegister
+}) {
+  const [step, setStep] = reactExports.useState(0);
+  const [u, setU] = reactExports.useState({
+    dni: "",
+    password: "",
+    nombres: "",
+    fechaNac: "",
+    edad: "",
+    telefono: "",
+    direccion: "",
+    posta: POSTAS[0],
+    role: "paciente",
+    fechaRegistro: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
+    pa: "",
+    fc: "",
+    peso: "",
+    talla: "",
+    imc: "",
+    glucosa: "",
+    estadoGlucosa: "Ayunas",
+    tipoDiabetes: "",
+    tiempoDiagnostico: "",
+    otrasEnfermedades: [],
+    otrasEnfermedadesDetalle: "",
+    medicamentos: "",
+    usaInsulina: "No",
+    cuantaInsulina: "",
+    cumpleDosis: "Siempre",
+    actividadFisica: "No",
+    frecuenciaActividad: "",
+    planAlimentacion: "Sí",
+    fuma: "No",
+    alcohol: "No"
+  });
+  const [sintomasIniciales, setSintomasIniciales] = reactExports.useState([]);
+  const [pw2, setPw2] = reactExports.useState("");
+  const [err, setErr] = reactExports.useState(null);
+  const set = (k, v) => setU((p) => ({
+    ...p,
+    [k]: v
+  }));
+  reactExports.useEffect(() => {
+    const p = Number(u.peso);
+    const t = Number(u.talla);
+    if (p > 0 && t > 0) {
+      const calculatedImc = (p / (t * t)).toFixed(1);
+      if (u.imc !== calculatedImc) {
+        set("imc", calculatedImc);
+      }
+    } else {
+      if (u.imc !== "") {
+        set("imc", "");
+      }
+    }
+  }, [u.peso, u.talla]);
+  const toggleEnf = (enf) => {
+    const cur = u.otrasEnfermedades ?? [];
+    if (enf === "Ninguna") {
+      set("otrasEnfermedades", ["Ninguna"]);
+      return;
+    }
+    const filtered = cur.filter((e) => e !== "Ninguna");
+    set("otrasEnfermedades", filtered.includes(enf) ? filtered.filter((e) => e !== enf) : [...filtered, enf]);
+  };
+  const toggleSintomaInicial = (s) => {
+    setSintomasIniciales((prev2) => prev2.includes(s) ? prev2.filter((x) => x !== s) : [...prev2, s]);
+  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!u.dni || !u.password || !u.nombres || !u.fechaNac || !u.edad || !u.telefono || !u.direccion) return setErr("Completa todos los campos obligatorios.");
+    if (u.password !== pw2) return setErr("Las contraseñas no coinciden.");
+    if (users.some((x) => x.dni === u.dni)) return setErr("Ya existe una cuenta con ese DNI.");
+    const initialRecord = {
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      dni: u.dni,
+      nombres: u.nombres,
+      edad: u.edad,
+      posta: u.posta,
+      pa: u.pa || "—",
+      fc: u.fc || "—",
+      peso: u.peso || "—",
+      talla: u.talla || "—",
+      imc: u.imc || "—",
+      glucosa: u.glucosa || "—",
+      estadoGlucosa: u.estadoGlucosa || "Ayunas",
+      sintomas: sintomasIniciales
+    };
+    onRegister(u, initialRecord);
+  };
+  const next = () => {
+    setErr(null);
+    if (step === 0) {
+      if (!u.fechaRegistro || !u.nombres || !u.dni || !u.fechaNac || !u.edad || !u.telefono || !u.direccion) {
+        return setErr("Por favor completa todos los datos personales.");
+      }
+    }
+    if (step === 1) {
+      if (!u.pa || !u.fc || !u.peso || !u.talla || !u.glucosa || !u.estadoGlucosa) {
+        return setErr("Por favor completa todos los campos de triaje inicial.");
+      }
+    }
+    if (step === 2) {
+      if (!u.tipoDiabetes || !u.tiempoDiagnostico || (u.otrasEnfermedades ?? []).length === 0) {
+        return setErr("Por favor responde a los antecedentes y diagnóstico.");
+      }
+    }
+    if (step === 3) {
+      if (!u.medicamentos || !u.usaInsulina || !u.cumpleDosis) {
+        return setErr("Por favor responde las preguntas de tratamiento.");
+      }
+      if (u.usaInsulina === "Sí" && !u.cuantaInsulina) {
+        return setErr("Por favor especifica cuál y cuántas unidades de insulina usa.");
+      }
+    }
+    if (step === 5) {
+      if (!u.actividadFisica || !u.planAlimentacion || !u.fuma || !u.alcohol) {
+        return setErr("Por favor completa las preguntas de estilo de vida.");
+      }
+      if (u.actividadFisica === "Sí" && !u.frecuenciaActividad) {
+        return setErr("Por favor especifica las veces por semana que realiza actividad física.");
+      }
+    }
+    setStep((s) => Math.min(PAC_STEPS.length - 1, s + 1));
+  };
+  const prev = () => {
+    setErr(null);
+    setStep((s) => Math.max(0, s - 1));
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("form", { className: "space-y-4", onSubmit: handleSubmit, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx(StepDots, { current: step, total: PAC_STEPS.length }),
+    step === 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Fecha", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "date", className: inputCls, value: u.fechaRegistro || "", onChange: (e) => set("fechaRegistro", e.target.value), required: true }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Nombres y Apellidos", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.nombres, onChange: (e) => set("nombres", e.target.value), placeholder: "María Elena Vargas", required: true }) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "DNI / Documento de Identidad", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.dni, onChange: (e) => set("dni", e.target.value), placeholder: "00000000", required: true }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Teléfono de Contacto", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.telefono, onChange: (e) => set("telefono", e.target.value), placeholder: "9XXXXXXXX", required: true }) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Fecha de Nacimiento", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "date", className: inputCls, value: u.fechaNac, onChange: (e) => {
+          const birth = e.target.value;
+          set("fechaNac", birth);
+          if (birth) {
+            const birthYear = new Date(birth).getFullYear();
+            const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
+            set("edad", String(currentYear - birthYear));
+          }
+        }, required: true }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Edad", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", className: inputCls, value: u.edad, onChange: (e) => set("edad", e.target.value), placeholder: "45", required: true }) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Dirección", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.direccion, onChange: (e) => set("direccion", e.target.value), placeholder: "Jr. Salud 45, Surquillo", required: true }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Posta de salud", children: /* @__PURE__ */ jsxRuntimeExports.jsx("select", { className: inputCls, value: u.posta, onChange: (e) => set("posta", e.target.value), children: POSTAS.map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx("option", { children: p }, p)) }) })
+    ] }),
+    step === 1 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground", children: [
+        "⚠️ ",
+        /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "Uso Exclusivo del Personal de Salud" }),
+        " o control de ingreso."
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Presión Arterial (PA) (mmHg)", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.pa || "", onChange: (e) => set("pa", e.target.value), placeholder: "120/80", required: true }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Frecuencia Cardíaca (FC) (lpm)", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", className: inputCls, value: u.fc || "", onChange: (e) => set("fc", e.target.value), placeholder: "78", required: true }) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-3", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Peso (kg)", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", step: "0.1", className: inputCls, value: u.peso || "", onChange: (e) => set("peso", e.target.value), placeholder: "70.0", required: true }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Talla (m)", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", step: "0.01", className: inputCls, value: u.talla || "", onChange: (e) => set("talla", e.target.value), placeholder: "1.65", required: true }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Índice de Masa Corporal (IMC)", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { readOnly: true, className: inputCls + " bg-muted/40 font-mono font-semibold", value: u.imc || "", placeholder: "—" }) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Glucemia Capilar (Hemoglucotest) (mg/dL)", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", className: inputCls, value: u.glucosa || "", onChange: (e) => set("glucosa", e.target.value), placeholder: "110", required: true }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mb-1.5 block text-sm font-medium", children: "Estado" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", children: ["Ayunas", "Post-prandial"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt === "Post-prandial" ? "Post-prandial (después de comer)" : "Ayunas", checked: u.estadoGlucosa === opt, onChange: () => set("estadoGlucosa", opt) }, opt)) })
+        ] })
+      ] })
+    ] }),
+    step === 2 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "Tipo de Diabetes" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-2 gap-2", children: ["Tipo 1", "Tipo 2", "Gestacional", "No sabe"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt, name: "tipoDiabetes", checked: u.tipoDiabetes === opt, onChange: () => set("tipoDiabetes", opt) }, opt)) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "Tiempo desde el diagnóstico" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-1 gap-2 sm:grid-cols-3", children: ["Menos de 1 año", "1 a 5 años", "Más de 5 años"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt, name: "tiempoDiag", checked: u.tiempoDiagnostico === opt, onChange: () => set("tiempoDiagnostico", opt) }, opt)) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "Otras enfermedades" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid grid-cols-2 gap-2", children: ENFERMEDADES_LIST.map((enf) => /* @__PURE__ */ jsxRuntimeExports.jsx(CheckPill, { label: enf, checked: (u.otrasEnfermedades ?? []).includes(enf), onChange: () => toggleEnf(enf) }, enf)) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Otros antecedentes u observaciones", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.otrasEnfermedadesDetalle || "", onChange: (e) => set("otrasEnfermedadesDetalle", e.target.value), placeholder: "Ej. Tiroides, problemas de presión, asma..." }) })
+    ] }),
+    step === 3 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Medicamentos que toma (Metformina, Glibenclamida, etc.)", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.medicamentos ?? "", onChange: (e) => set("medicamentos", e.target.value), placeholder: "Metformina 850mg c/12h...", required: true }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "¿Usa Insulina?" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", children: ["Sí", "No"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt, name: "insulina", checked: u.usaInsulina === opt, onChange: () => set("usaInsulina", opt) }, opt)) })
+      ] }),
+      u.usaInsulina === "Sí" && /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "¿Cuál y cuántas unidades?", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { className: inputCls, value: u.cuantaInsulina ?? "", onChange: (e) => set("cuantaInsulina", e.target.value), placeholder: "Lantus, 15 unidades por la noche", required: true }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "¿Cumple con las dosis?" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", children: ["Siempre", "A veces", "Nunca"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt, name: "cumpleDosis", checked: u.cumpleDosis === opt, onChange: () => set("cumpleDosis", opt) }, opt)) })
+      ] })
+    ] }),
+    step === 4 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium", children: "Marque con una X si presenta alguno de los siguientes síntomas:" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid gap-2 sm:grid-cols-1 md:grid-cols-2", children: SYMPTOM_LIST.map((s) => {
+        const checked = sintomasIniciales.includes(s);
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(CheckPill, { label: s, checked, onChange: () => toggleSintomaInicial(s) }, s);
+      }) })
+    ] }),
+    step === 5 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-4", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "¿Realiza actividad física?" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", children: ["Sí", "No"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt, name: "actividad", checked: u.actividadFisica === opt, onChange: () => set("actividadFisica", opt) }, opt)) })
+      ] }),
+      u.actividadFisica === "Sí" && /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Veces por semana", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "number", min: "1", max: "7", className: inputCls, value: u.frecuenciaActividad ?? "", onChange: (e) => set("frecuenciaActividad", e.target.value), placeholder: "3", required: true }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "¿Sigue el plan de alimentación?" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", children: ["Sí", "A veces", "No"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt, name: "planAlim", checked: u.planAlimentacion === opt, onChange: () => set("planAlimentacion", opt) }, opt)) })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid grid-cols-2 gap-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "¿Fuma?" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", children: ["Sí", "No"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt, name: "fuma", checked: u.fuma === opt, onChange: () => set("fuma", opt) }, opt)) })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 text-sm font-medium", children: "¿Consume alcohol?" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex gap-2", children: ["Sí", "No"].map((opt) => /* @__PURE__ */ jsxRuntimeExports.jsx(RadioPill, { label: opt, name: "alcohol", checked: u.alcohol === opt, onChange: () => set("alcohol", opt) }, opt)) })
+        ] })
+      ] })
+    ] }),
+    step === 6 && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground", children: "Define tu contraseña de ingreso para finalizar el registro." }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-3 sm:grid-cols-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Contraseña *", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "password", className: inputCls, value: u.password, onChange: (e) => set("password", e.target.value), required: true }) }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(Field, { label: "Confirmar contraseña *", children: /* @__PURE__ */ jsxRuntimeExports.jsx("input", { type: "password", className: inputCls, value: pw2, onChange: (e) => setPw2(e.target.value), required: true }) })
+      ] })
+    ] }),
+    err && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive", children: err }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between border-t border-border pt-4", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: prev, disabled: step === 0, className: "rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-40", children: "← Anterior" }),
+      step < PAC_STEPS.length - 1 ? /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "button", onClick: next, className: "rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90", style: {
+        background: "var(--gradient-hero)"
+      }, children: "Siguiente →" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("button", { type: "submit", className: "rounded-xl px-5 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-90", style: {
+        background: "var(--gradient-hero)"
+      }, children: "✓ Crear cuenta" })
+    ] })
   ] });
 }
 function ForgotForm({
@@ -1197,9 +1537,20 @@ function PaginationBar({
     ] })
   ] });
 }
+function DetailBlock({
+  label,
+  value,
+  highlight
+}) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground font-medium block", children: label }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `mt-0.5 block font-semibold ${highlight ? "text-primary text-base" : "text-foreground"}`, children: value || "—" })
+  ] });
+}
 function DoctorApp({
   user,
-  records
+  records,
+  users
 }) {
   const [docRisk, setDocRisk] = reactExports.useState("");
   const [docFrom, setDocFrom] = reactExports.useState("");
@@ -1207,6 +1558,7 @@ function DoctorApp({
   const [docSearch, setDocSearch] = reactExports.useState("");
   const [docPosta, setDocPosta] = reactExports.useState("");
   const [docPage, setDocPage] = reactExports.useState(1);
+  const [selectedDni, setSelectedDni] = reactExports.useState(null);
   const sorted = reactExports.useMemo(() => {
     const order = {
       alto: 0,
@@ -1415,16 +1767,136 @@ function DoctorApp({
                 ] })
               ] }) }),
               /* @__PURE__ */ jsxRuntimeExports.jsx("td", { className: "px-6 py-3", children: /* @__PURE__ */ jsxRuntimeExports.jsx(RiskBadge, { level }) }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx("td", { className: "px-6 py-3 text-right", children: isAlert ? /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90", style: {
-                background: "var(--color-risk-alto-strong)"
-              }, children: "Contactar" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs text-muted-foreground", children: "—" }) })
+              /* @__PURE__ */ jsxRuntimeExports.jsx("td", { className: "px-6 py-3 text-right", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex justify-end gap-2", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => setSelectedDni(r.dni), className: "rounded-lg border border-primary text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary hover:text-white transition shadow-sm", children: "Ver Ficha" }),
+                isAlert && /* @__PURE__ */ jsxRuntimeExports.jsx("button", { className: "rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition", style: {
+                  background: "var(--color-risk-alto-strong)"
+                }, children: "Contactar" })
+              ] }) })
             ] }, r.id);
           }),
           filtered.length === 0 && /* @__PURE__ */ jsxRuntimeExports.jsx("tr", { children: /* @__PURE__ */ jsxRuntimeExports.jsx("td", { colSpan: 7, className: "px-6 py-10 text-center text-muted-foreground", children: hasDocFilters ? "Sin resultados con estos filtros." : "Sin fichas aún." }) })
         ] })
       ] }) }),
       filtered.length > DOCTOR_PAGE_SIZE && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "px-6 pb-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(PaginationBar, { page: docPageSafe, totalPages: docTotalPages, onPage: setDocPage }) })
-    ] })
+    ] }),
+    selectedDni && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-start justify-between border-b border-border pb-4", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-xs font-semibold uppercase tracking-widest text-primary", children: "Ficha Clínica del Paciente" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { className: "text-2xl font-bold tracking-tight mt-0.5", children: users.find((u) => u.dni === selectedDni)?.nombres || records.find((r) => r.dni === selectedDni)?.nombres || "Paciente" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "text-xs text-muted-foreground mt-0.5", children: [
+            "DNI: ",
+            selectedDni
+          ] })
+        ] }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => setSelectedDni(null), className: "rounded-full border border-border p-1.5 hover:bg-muted transition-colors", children: /* @__PURE__ */ jsxRuntimeExports.jsx(X, { className: "h-5 w-5" }) })
+      ] }),
+      (() => {
+        const p = users.find((u) => u.dni === selectedDni);
+        const pRecords = records.filter((r) => r.dni === selectedDni).sort((a, b) => b.createdAt - a.createdAt);
+        const latestRec = pRecords[0];
+        return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-6 space-y-6", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2", children: "1. Datos Personales" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-4 grid-cols-2 sm:grid-cols-3 text-sm", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Fecha de Registro", value: p?.fechaRegistro || "Demo Pre-existente" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Fecha de Nacimiento", value: p?.fechaNac || "No registrada" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Edad", value: p?.edad ? `${p.edad} años` : latestRec?.edad ? `${latestRec.edad} años` : "No registrada" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Teléfono de Contacto", value: p?.telefono || "No registrado" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Posta / Centro", value: p?.posta || latestRec?.posta || "No asignada" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "col-span-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Dirección", value: p?.direccion || "No registrada" }) })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("hr", { className: "border-border/60" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2", children: "2. Último Triaje Registrado" }),
+            latestRec ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-4 grid-cols-2 sm:grid-cols-4 text-sm bg-muted/30 rounded-2xl p-4", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Presión Arterial (PA)", value: latestRec.pa || "—" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Frecuencia Cardíaca", value: latestRec.fc ? `${latestRec.fc} lpm` : "—" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Peso", value: latestRec.peso ? `${latestRec.peso} kg` : "—" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Talla", value: latestRec.talla ? `${latestRec.talla} m` : "—" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "IMC", value: latestRec.imc || "—" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Glucemia", value: latestRec.glucosa ? `${latestRec.glucosa} mg/dL` : "—", highlight: true }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Estado de Medición", value: latestRec.estadoGlucosa || "—" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Nivel de Riesgo", value: /* @__PURE__ */ jsxRuntimeExports.jsx(RiskBadge, { level: classify(latestRec) }) })
+            ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm text-muted-foreground italic", children: "No hay registros de triaje aún." })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("hr", { className: "border-border/60" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2", children: "3. Antecedentes y Diagnóstico" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-4 grid-cols-1 sm:grid-cols-2 text-sm", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Tipo de Diabetes", value: p?.tipoDiabetes || "No registrado" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Tiempo desde el diagnóstico", value: p?.tiempoDiagnostico || "No registrado" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "col-span-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Otras enfermedades", value: p?.otrasEnfermedades && p.otrasEnfermedades.length > 0 ? p.otrasEnfermedades.filter((x) => !x.startsWith("_snt_")).join(", ") : "Ninguna" }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "col-span-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Detalles u observaciones adicionales", value: p?.otrasEnfermedadesDetalle || "Ninguno" }) })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("hr", { className: "border-border/60" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2", children: "4. Tratamiento Actual" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-4 grid-cols-1 sm:grid-cols-2 text-sm", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "col-span-2", children: /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Medicamentos que toma", value: p?.medicamentos || "No registrado" }) }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "¿Usa Insulina?", value: p?.usaInsulina || "No registrado" }),
+              p?.usaInsulina === "Sí" && /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Insulina (cuál y cuántas unidades)", value: p?.cuantaInsulina || "—" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "¿Cumple con las dosis?", value: p?.cumpleDosis || "No registrado" })
+            ] })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("hr", { className: "border-border/60" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2", children: "5. Síntomas del Registro Inicial" }),
+            p?.sintomasIniciales && p.sintomasIniciales.length > 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-wrap gap-1.5", children: p.sintomasIniciales.map((s) => /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `rounded-lg px-2.5 py-1 text-xs font-semibold ${SEVERE_SYMPTOMS.has(s) ? "bg-[var(--color-risk-alto-bg)] text-[var(--color-risk-alto-text)] border border-[var(--color-risk-alto-border)]" : "bg-muted text-muted-foreground border border-border"}`, children: s }, s)) }) : /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-xs text-muted-foreground italic", children: "No se marcaron síntomas en el registro inicial." })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("hr", { className: "border-border/60" }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("h4", { className: "text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2", children: "6. Estilo de Vida" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "grid gap-4 grid-cols-2 sm:grid-cols-4 text-sm", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Actividad física", value: p?.actividadFisica === "Sí" ? `Sí (${p.frecuenciaActividad} veces/sem)` : "No" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "Plan de alimentación", value: p?.planAlimentacion || "No registrado" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "¿Fuma?", value: p?.fuma || "No registrado" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(DetailBlock, { label: "¿Consume alcohol?", value: p?.alcohol || "No registrado" })
+            ] })
+          ] }),
+          pRecords.length > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("hr", { className: "border-border/60" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "space-y-3", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsxs("h4", { className: "text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2", children: [
+                "Historial de Reportes (",
+                pRecords.length,
+                ")"
+              ] }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "overflow-x-auto rounded-xl border border-border bg-muted/10", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("table", { className: "w-full text-xs", children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx("thead", { className: "bg-muted text-left uppercase text-muted-foreground", children: /* @__PURE__ */ jsxRuntimeExports.jsxs("tr", { children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("th", { className: "px-4 py-2", children: "Fecha" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("th", { className: "px-4 py-2", children: "Glucemia" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("th", { className: "px-4 py-2", children: "Presión" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("th", { className: "px-4 py-2", children: "FC" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("th", { className: "px-4 py-2", children: "Síntomas" }),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx("th", { className: "px-4 py-2 text-right", children: "Riesgo" })
+                ] }) }),
+                /* @__PURE__ */ jsxRuntimeExports.jsx("tbody", { children: pRecords.map((rec) => {
+                  const level = classify(rec);
+                  return /* @__PURE__ */ jsxRuntimeExports.jsxs("tr", { className: "border-t border-border", children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("td", { className: "px-4 py-2", children: new Date(rec.createdAt).toLocaleDateString("es-PE") }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsxs("td", { className: "px-4 py-2 font-semibold", children: [
+                      rec.glucosa,
+                      " mg/dL (",
+                      rec.estadoGlucosa,
+                      ")"
+                    ] }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("td", { className: "px-4 py-2", children: rec.pa || "—" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("td", { className: "px-4 py-2", children: rec.fc ? `${rec.fc} lpm` : "—" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("td", { className: "px-4 py-2", children: rec.sintomas.length || "0" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("td", { className: "px-4 py-2 text-right", children: /* @__PURE__ */ jsxRuntimeExports.jsx(RiskBadge, { level }) })
+                  ] }, rec.id);
+                }) })
+              ] }) })
+            ] })
+          ] })
+        ] });
+      })(),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mt-8 flex justify-end border-t border-border pt-4", children: /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => setSelectedDni(null), className: "rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:opacity-90 transition", children: "Cerrar Ficha" }) })
+    ] }) })
   ] });
 }
 function Stat({

@@ -30,13 +30,22 @@ export const Route = createFileRoute("/")({
 const POSTAS = ["Surquillo", "Mirones", "San Isidro", "Breña", "La Victoria", "Barranco"];
 
 const SYMPTOM_LIST = [
-  "Mucha sed", "Orinar seguido", "Mucha hambre", "Pérdida de peso",
-  "Visión borrosa", "Cansancio extremo", "Mareos/sudoración fría",
-  "Heridas que tardan en sanar", "Adormecimiento en pies",
+  "Mucha sed (Polidipsia)",
+  "Orinar seguido, especialmente de noche (Poliuria)",
+  "Mucha hambre (Polifagia)",
+  "Pérdida de peso sin causa aparente",
+  "Visión borrosa",
+  "Cansancio extremo o debilidad",
+  "Mareos o sudoración fría (posible baja de azúcar)",
+  "Heridas que tardan en sanar",
+  "Adormecimiento o hincadas en los pies",
 ];
 
 const SEVERE_SYMPTOMS = new Set([
-  "Visión borrosa", "Mareos/sudoración fría", "Pérdida de peso", "Heridas que tardan en sanar",
+  "Visión borrosa",
+  "Mareos o sudoración fría (posible baja de azúcar)",
+  "Pérdida de peso sin causa aparente",
+  "Heridas que tardan en sanar",
 ]);
 
 type User = {
@@ -52,13 +61,23 @@ type User = {
   // Campos exclusivos del médico
   cmp?: string;
   especialidad?: string;
-  renae?: string;
+  renae?: string; // Código RENAES
   redSalud?: string;
   horarioAtencion?: string;
   // Campos adicionales paciente (registro inicial)
+  fechaRegistro?: string;
+  pa?: string;
+  fc?: string;
+  peso?: string;
+  talla?: string;
+  imc?: string;
+  glucosa?: string;
+  estadoGlucosa?: "Ayunas" | "Post-prandial";
   tipoDiabetes?: string;
   tiempoDiagnostico?: string;
   otrasEnfermedades?: string[];
+  otrasEnfermedadesDetalle?: string;
+  sintomasIniciales?: string[];
   medicamentos?: string;
   usaInsulina?: string;
   cuantaInsulina?: string;
@@ -176,7 +195,13 @@ function Index() {
             onSwitch={(mode) => setScreen({ name: "auth", role: screen.role, mode })}
             onBack={() => setScreen({ name: "landing" })}
             onLogin={(dni) => setScreen({ name: "app", userDni: dni })}
-            onRegister={(u) => { setUsers((p) => [...p, u]); setScreen({ name: "app", userDni: u.dni }); }}
+            onRegister={(u, rec) => {
+              setUsers((p) => [...p, u]);
+              if (rec) {
+                setRecords((prev) => [rec, ...prev]);
+              }
+              setScreen({ name: "app", userDni: u.dni });
+            }}
             onResetPassword={(dni, pw) => setUsers((p) => p.map((x) => x.dni === dni ? { ...x, password: pw } : x))}
           />
         )}
@@ -188,7 +213,7 @@ function Index() {
           />
         )}
         {screen.name === "app" && currentUser?.role === "medico" && (
-          <DoctorApp user={currentUser} records={records} />
+          <DoctorApp user={currentUser} records={records} users={users} />
         )}
         {screen.name === "app" && !currentUser && (
           <div className="rounded-2xl border border-border bg-card p-8 text-center">
@@ -333,7 +358,7 @@ function AuthScreen({
   onSwitch: (mode: "login" | "register" | "forgot") => void;
   onBack: () => void;
   onLogin: (dni: string) => void;
-  onRegister: (u: User) => void;
+  onRegister: (u: User, initialRecord?: TriajeRecord) => void;
   onResetPassword: (dni: string, pw: string) => void;
 }) {
   const wide = mode === "register";
@@ -395,6 +420,13 @@ function LoginForm({ role, users, onLogin }: { role: "paciente" | "medico"; user
   const [dni, setDni] = useState(demoDni);
   const [pw, setPw] = useState(demoPw);
   const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDni(demoDni);
+    setPw(demoPw);
+    setErr(null);
+  }, [role, demoDni, demoPw]);
+
   return (
     <form
       className="space-y-4"
@@ -409,6 +441,26 @@ function LoginForm({ role, users, onLogin }: { role: "paciente" | "medico"; user
       <Field label="Contraseña"><input type="password" className={inputCls} value={pw} onChange={(e) => setPw(e.target.value)} required /></Field>
       {err && <div className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{err}</div>}
       <button type="submit" className={btnPrimary()} style={{ background: "var(--gradient-hero)" }}>Entrar</button>
+
+      <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-primary">Acceso de Demostración:</span>
+          <button
+            type="button"
+            onClick={() => {
+              setDni(demoDni);
+              setPw(demoPw);
+              setErr(null);
+            }}
+            className="font-bold text-primary hover:underline"
+          >
+            Auto-completar ⚡
+          </button>
+        </div>
+        <p className="mt-1 text-muted-foreground">
+          DNI: <strong className="text-foreground">{demoDni}</strong> | Clave: <strong className="text-foreground">{demoPw}</strong>
+        </p>
+      </div>
     </form>
   );
 }
@@ -457,7 +509,7 @@ function RadioPill({ label, checked, onChange }: { label: string; name?: string;
   );
 }
 
-function RegisterForm({ role, users, onRegister }: { role: "paciente" | "medico"; users: User[]; onRegister: (u: User) => void }) {
+function RegisterForm({ role, users, onRegister }: { role: "paciente" | "medico"; users: User[]; onRegister: (u: User, initialRecord?: TriajeRecord) => void }) {
   if (role === "medico") return <RegisterFormMedico users={users} onRegister={onRegister} />;
   return <RegisterFormPaciente users={users} onRegister={onRegister} />;
 }
@@ -505,8 +557,8 @@ function RegisterFormMedico({ users, onRegister }: { users: User[]; onRegister: 
         <Field label="Especialidad">
           <input className={inputCls} value={u.especialidad} onChange={(e) => set("especialidad", e.target.value)} placeholder="Endocrinología" required />
         </Field>
-        <Field label="Código RENAE">
-          <input className={inputCls} value={u.renae} onChange={(e) => set("renae", e.target.value)} placeholder="RENAE-XXXXXX" required />
+        <Field label="Código RENAES">
+          <input className={inputCls} value={u.renae} onChange={(e) => set("renae", e.target.value)} placeholder="RENAES-XXXXXX" required />
         </Field>
         <Field label="Red de salud / DIRESA">
           <input className={inputCls} value={u.redSalud} onChange={(e) => set("redSalud", e.target.value)} placeholder="DIRESA Lima Ciudad" required />
@@ -540,11 +592,19 @@ function RegisterFormMedico({ users, onRegister }: { users: User[]; onRegister: 
 
 // ---- REGISTRO PACIENTE (formulario completo en pasos) ----
 const ENFERMEDADES_LIST = ["Hipertensión", "Colesterol alto", "Problemas renales", "Ninguna"];
-const PAC_STEPS = ["Datos", "Antecedentes", "Tratamiento", "Síntomas", "Estilo de vida", "Acceso"] as const;
+const PAC_STEPS = [
+  "Datos Personales",
+  "Triaje Inicial",
+  "Antecedentes y Diagnóstico",
+  "Tratamiento Actual",
+  "Síntomas Recientes",
+  "Estilo de Vida",
+  "Credenciales de Acceso",
+] as const;
 
 function StepDots({ current, total }: { current: number; total: number }) {
   return (
-    <div className="mb-1 flex items-center justify-between">
+    <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
       <span className="text-xs font-medium text-muted-foreground">
         Paso {current + 1} de {total} — <span className="text-foreground font-semibold">{PAC_STEPS[current]}</span>
       </span>
@@ -560,18 +620,38 @@ function StepDots({ current, total }: { current: number; total: number }) {
   );
 }
 
-function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister: (u: User) => void }) {
+function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister: (u: User, initialRecord?: TriajeRecord) => void }) {
   const [step, setStep] = useState(0);
   const [u, setU] = useState<User>({
     dni: "", password: "", nombres: "", fechaNac: "", edad: "", telefono: "",
     direccion: "", posta: POSTAS[0], role: "paciente",
-    tipoDiabetes: "", tiempoDiagnostico: "", otrasEnfermedades: [],
-    medicamentos: "", usaInsulina: "", cuantaInsulina: "", cumpleDosis: "",
-    actividadFisica: "", frecuenciaActividad: "", planAlimentacion: "", fuma: "", alcohol: "",
+    fechaRegistro: new Date().toISOString().split("T")[0],
+    pa: "", fc: "", peso: "", talla: "", imc: "", glucosa: "", estadoGlucosa: "Ayunas",
+    tipoDiabetes: "", tiempoDiagnostico: "", otrasEnfermedades: [], otrasEnfermedadesDetalle: "",
+    medicamentos: "", usaInsulina: "No", cuantaInsulina: "", cumpleDosis: "Siempre",
+    actividadFisica: "No", frecuenciaActividad: "", planAlimentacion: "Sí", fuma: "No", alcohol: "No",
   });
+  const [sintomasIniciales, setSintomasIniciales] = useState<string[]>([]);
   const [pw2, setPw2] = useState("");
   const [err, setErr] = useState<string | null>(null);
+
   const set = <K extends keyof User>(k: K, v: User[K]) => setU((p) => ({ ...p, [k]: v }));
+
+  // Auto-calcular IMC
+  useEffect(() => {
+    const p = Number(u.peso);
+    const t = Number(u.talla);
+    if (p > 0 && t > 0) {
+      const calculatedImc = (p / (t * t)).toFixed(1);
+      if (u.imc !== calculatedImc) {
+        set("imc", calculatedImc);
+      }
+    } else {
+      if (u.imc !== "") {
+        set("imc", "");
+      }
+    }
+  }, [u.peso, u.talla]);
 
   const toggleEnf = (enf: string) => {
     const cur = u.otrasEnfermedades ?? [];
@@ -580,16 +660,76 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
     set("otrasEnfermedades", filtered.includes(enf) ? filtered.filter((e) => e !== enf) : [...filtered, enf]);
   };
 
+  const toggleSintomaInicial = (s: string) => {
+    setSintomasIniciales((prev) =>
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+    );
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!u.dni || !u.password || !u.nombres || !u.fechaNac || !u.edad || !u.telefono || !u.direccion)
       return setErr("Completa todos los campos obligatorios.");
     if (u.password !== pw2) return setErr("Las contraseñas no coinciden.");
     if (users.some((x) => x.dni === u.dni)) return setErr("Ya existe una cuenta con ese DNI.");
-    onRegister(u);
+    
+    // Crear el record inicial de triaje a partir de los datos ingresados
+    const initialRecord: TriajeRecord = {
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+      dni: u.dni,
+      nombres: u.nombres,
+      edad: u.edad,
+      posta: u.posta,
+      pa: u.pa || "—",
+      fc: u.fc || "—",
+      peso: u.peso || "—",
+      talla: u.talla || "—",
+      imc: u.imc || "—",
+      glucosa: u.glucosa || "—",
+      estadoGlucosa: u.estadoGlucosa || "Ayunas",
+      sintomas: sintomasIniciales,
+    };
+
+    onRegister(u, initialRecord);
   };
 
-  const next = () => { setErr(null); setStep((s) => Math.min(PAC_STEPS.length - 1, s + 1)); };
+  const next = () => {
+    setErr(null);
+    if (step === 0) {
+      if (!u.fechaRegistro || !u.nombres || !u.dni || !u.fechaNac || !u.edad || !u.telefono || !u.direccion) {
+        return setErr("Por favor completa todos los datos personales.");
+      }
+    }
+    if (step === 1) {
+      if (!u.pa || !u.fc || !u.peso || !u.talla || !u.glucosa || !u.estadoGlucosa) {
+        return setErr("Por favor completa todos los campos de triaje inicial.");
+      }
+    }
+    if (step === 2) {
+      if (!u.tipoDiabetes || !u.tiempoDiagnostico || (u.otrasEnfermedades ?? []).length === 0) {
+        return setErr("Por favor responde a los antecedentes y diagnóstico.");
+      }
+    }
+    if (step === 3) {
+      if (!u.medicamentos || !u.usaInsulina || !u.cumpleDosis) {
+        return setErr("Por favor responde las preguntas de tratamiento.");
+      }
+      if (u.usaInsulina === "Sí" && !u.cuantaInsulina) {
+        return setErr("Por favor especifica cuál y cuántas unidades de insulina usa.");
+      }
+    }
+    if (step === 5) {
+      if (!u.actividadFisica || !u.planAlimentacion || !u.fuma || !u.alcohol) {
+        return setErr("Por favor completa las preguntas de estilo de vida.");
+      }
+      if (u.actividadFisica === "Sí" && !u.frecuenciaActividad) {
+        return setErr("Por favor especifica las veces por semana que realiza actividad física.");
+      }
+    }
+    setStep((s) => Math.min(PAC_STEPS.length - 1, s + 1));
+  };
+
   const prev = () => { setErr(null); setStep((s) => Math.max(0, s - 1)); };
 
   return (
@@ -599,18 +739,33 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
       {/* Paso 0: Datos personales */}
       {step === 0 && (
         <div className="space-y-3">
-          <Field label="Nombre completo">
-            <input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} placeholder="María Elena Vargas" required />
-          </Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="DNI">
+            <Field label="Fecha">
+              <input type="date" className={inputCls} value={u.fechaRegistro || ""} onChange={(e) => set("fechaRegistro", e.target.value)} required />
+            </Field>
+            <Field label="Nombres y Apellidos">
+              <input className={inputCls} value={u.nombres} onChange={(e) => set("nombres", e.target.value)} placeholder="María Elena Vargas" required />
+            </Field>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="DNI / Documento de Identidad">
               <input className={inputCls} value={u.dni} onChange={(e) => set("dni", e.target.value)} placeholder="00000000" required />
             </Field>
-            <Field label="Teléfono">
+            <Field label="Teléfono de Contacto">
               <input className={inputCls} value={u.telefono} onChange={(e) => set("telefono", e.target.value)} placeholder="9XXXXXXXX" required />
             </Field>
-            <Field label="Nacimiento">
-              <input type="date" className={inputCls} value={u.fechaNac} onChange={(e) => set("fechaNac", e.target.value)} required />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Fecha de Nacimiento">
+              <input type="date" className={inputCls} value={u.fechaNac} onChange={(e) => {
+                const birth = e.target.value;
+                set("fechaNac", birth);
+                if (birth) {
+                  const birthYear = new Date(birth).getFullYear();
+                  const currentYear = new Date().getFullYear();
+                  set("edad", String(currentYear - birthYear));
+                }
+              }} required />
             </Field>
             <Field label="Edad">
               <input type="number" className={inputCls} value={u.edad} onChange={(e) => set("edad", e.target.value)} placeholder="45" required />
@@ -627,13 +782,59 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
         </div>
       )}
 
-      {/* Paso 1: Antecedentes */}
+      {/* Paso 1: Triaje Inicial */}
       {step === 1 && (
+        <div className="space-y-3">
+          <div className="rounded-lg bg-muted/30 p-2 text-xs text-muted-foreground">
+            ⚠️ <strong>Uso Exclusivo del Personal de Salud</strong> o control de ingreso.
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Presión Arterial (PA) (mmHg)">
+              <input className={inputCls} value={u.pa || ""} onChange={(e) => set("pa", e.target.value)} placeholder="120/80" required />
+            </Field>
+            <Field label="Frecuencia Cardíaca (FC) (lpm)">
+              <input type="number" className={inputCls} value={u.fc || ""} onChange={(e) => set("fc", e.target.value)} placeholder="78" required />
+            </Field>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Field label="Peso (kg)">
+              <input type="number" step="0.1" className={inputCls} value={u.peso || ""} onChange={(e) => set("peso", e.target.value)} placeholder="70.0" required />
+            </Field>
+            <Field label="Talla (m)">
+              <input type="number" step="0.01" className={inputCls} value={u.talla || ""} onChange={(e) => set("talla", e.target.value)} placeholder="1.65" required />
+            </Field>
+            <Field label="Índice de Masa Corporal (IMC)">
+              <input readOnly className={inputCls + " bg-muted/40 font-mono font-semibold"} value={u.imc || ""} placeholder="—" />
+            </Field>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Glucemia Capilar (Hemoglucotest) (mg/dL)">
+              <input type="number" className={inputCls} value={u.glucosa || ""} onChange={(e) => set("glucosa", e.target.value)} placeholder="110" required />
+            </Field>
+            <div>
+              <span className="mb-1.5 block text-sm font-medium">Estado</span>
+              <div className="flex gap-2">
+                {(["Ayunas", "Post-prandial"] as const).map((opt) => (
+                  <RadioPill
+                    key={opt}
+                    label={opt === "Post-prandial" ? "Post-prandial (después de comer)" : "Ayunas"}
+                    checked={u.estadoGlucosa === opt}
+                    onChange={() => set("estadoGlucosa", opt)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Paso 2: Antecedentes y Diagnóstico */}
+      {step === 2 && (
         <div className="space-y-4">
           <div>
-            <p className="mb-2 text-sm font-medium">Tipo de diabetes</p>
+            <p className="mb-2 text-sm font-medium">Tipo de Diabetes</p>
             <div className="grid grid-cols-2 gap-2">
-              {["Tipo 1", "Tipo 2", "Gestacional", "No sé"].map((opt) => (
+              {["Tipo 1", "Tipo 2", "Gestacional", "No sabe"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="tipoDiabetes" checked={u.tipoDiabetes === opt} onChange={() => set("tipoDiabetes", opt)} />
               ))}
             </div>
@@ -654,17 +855,20 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
               ))}
             </div>
           </div>
+          <Field label="Otros antecedentes u observaciones">
+            <input className={inputCls} value={u.otrasEnfermedadesDetalle || ""} onChange={(e) => set("otrasEnfermedadesDetalle", e.target.value)} placeholder="Ej. Tiroides, problemas de presión, asma..." />
+          </Field>
         </div>
       )}
 
-      {/* Paso 2: Tratamiento */}
-      {step === 2 && (
+      {/* Paso 3: Tratamiento Actual */}
+      {step === 3 && (
         <div className="space-y-4">
-          <Field label="Medicamentos actuales">
-            <input className={inputCls} value={u.medicamentos ?? ""} onChange={(e) => set("medicamentos", e.target.value)} placeholder="Metformina 850mg, Glibenclamida 5mg…" />
+          <Field label="Medicamentos que toma (Metformina, Glibenclamida, etc.)">
+            <input className={inputCls} value={u.medicamentos ?? ""} onChange={(e) => set("medicamentos", e.target.value)} placeholder="Metformina 850mg c/12h..." required />
           </Field>
           <div>
-            <p className="mb-2 text-sm font-medium">¿Usa insulina?</p>
+            <p className="mb-2 text-sm font-medium">¿Usa Insulina?</p>
             <div className="flex gap-2">
               {["Sí", "No"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="insulina" checked={u.usaInsulina === opt} onChange={() => set("usaInsulina", opt)} />
@@ -673,11 +877,11 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
           </div>
           {u.usaInsulina === "Sí" && (
             <Field label="¿Cuál y cuántas unidades?">
-              <input className={inputCls} value={u.cuantaInsulina ?? ""} onChange={(e) => set("cuantaInsulina", e.target.value)} placeholder="Insulina Glargina 20 UI" />
+              <input className={inputCls} value={u.cuantaInsulina ?? ""} onChange={(e) => set("cuantaInsulina", e.target.value)} placeholder="Lantus, 15 unidades por la noche" required />
             </Field>
           )}
           <div>
-            <p className="mb-2 text-sm font-medium">¿Cumple las dosis?</p>
+            <p className="mb-2 text-sm font-medium">¿Cumple con las dosis?</p>
             <div className="flex gap-2">
               {["Siempre", "A veces", "Nunca"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="cumpleDosis" checked={u.cumpleDosis === opt} onChange={() => set("cumpleDosis", opt)} />
@@ -687,35 +891,26 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
         </div>
       )}
 
-      {/* Paso 3: Síntomas */}
-      {step === 3 && (
+      {/* Paso 4: Síntomas Recientes (Últimas 2 semanas) */}
+      {step === 4 && (
         <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">Marca los síntomas de las últimas 2 semanas</p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {[
-              "Mucha sed", "Orinar seguido de noche", "Mucha hambre",
-              "Pérdida de peso", "Visión borrosa", "Cansancio extremo",
-              "Mareos o sudoración fría", "Heridas que tardan en sanar", "Adormecimiento en pies",
-            ].map((s) => {
-              const key = "_snt_" + s;
-              const checked = (u.otrasEnfermedades ?? []).includes(key);
+          <p className="text-sm font-medium">Marque con una X si presenta alguno de los siguientes síntomas:</p>
+          <div className="grid gap-2 sm:grid-cols-1 md:grid-cols-2">
+            {SYMPTOM_LIST.map((s) => {
+              const checked = sintomasIniciales.includes(s);
               return (
-                <CheckPill key={s} label={s} checked={checked} onChange={(v) => {
-                  const rest = (u.otrasEnfermedades ?? []).filter((x) => !x.startsWith("_snt_"));
-                  const snts = (u.otrasEnfermedades ?? []).filter((x) => x.startsWith("_snt_"));
-                  set("otrasEnfermedades", v ? [...rest, ...snts, key] : [...rest, ...snts.filter((x) => x !== key)]);
-                }} />
+                <CheckPill key={s} label={s} checked={checked} onChange={() => toggleSintomaInicial(s)} />
               );
             })}
           </div>
         </div>
       )}
 
-      {/* Paso 4: Estilo de vida */}
-      {step === 4 && (
+      {/* Paso 5: Estilo de Vida */}
+      {step === 5 && (
         <div className="space-y-4">
           <div>
-            <p className="mb-2 text-sm font-medium">Actividad física</p>
+            <p className="mb-2 text-sm font-medium">¿Realiza actividad física?</p>
             <div className="flex gap-2">
               {["Sí", "No"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="actividad" checked={u.actividadFisica === opt} onChange={() => set("actividadFisica", opt)} />
@@ -724,11 +919,11 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
           </div>
           {u.actividadFisica === "Sí" && (
             <Field label="Veces por semana">
-              <input type="number" min="1" max="7" className={inputCls} value={u.frecuenciaActividad ?? ""} onChange={(e) => set("frecuenciaActividad", e.target.value)} placeholder="3" />
+              <input type="number" min="1" max="7" className={inputCls} value={u.frecuenciaActividad ?? ""} onChange={(e) => set("frecuenciaActividad", e.target.value)} placeholder="3" required />
             </Field>
           )}
           <div>
-            <p className="mb-2 text-sm font-medium">Plan de alimentación</p>
+            <p className="mb-2 text-sm font-medium">¿Sigue el plan de alimentación?</p>
             <div className="flex gap-2">
               {["Sí", "A veces", "No"].map((opt) => (
                 <RadioPill key={opt} label={opt} name="planAlim" checked={u.planAlimentacion === opt} onChange={() => set("planAlimentacion", opt)} />
@@ -745,7 +940,7 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
               </div>
             </div>
             <div>
-              <p className="mb-2 text-sm font-medium">¿Alcohol?</p>
+              <p className="mb-2 text-sm font-medium">¿Consume alcohol?</p>
               <div className="flex gap-2">
                 {["Sí", "No"].map((opt) => (
                   <RadioPill key={opt} label={opt} name="alcohol" checked={u.alcohol === opt} onChange={() => set("alcohol", opt)} />
@@ -756,9 +951,10 @@ function RegisterFormPaciente({ users, onRegister }: { users: User[]; onRegister
         </div>
       )}
 
-      {/* Paso 5: Acceso */}
-      {step === 5 && (
+      {/* Paso 6: Credenciales de Acceso */}
+      {step === 6 && (
         <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">Define tu contraseña de ingreso para finalizar el registro.</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Contraseña *">
               <input type="password" className={inputCls} value={u.password} onChange={(e) => set("password", e.target.value)} required />
@@ -1215,13 +1411,26 @@ function PaginationBar({ page, totalPages, onPage }: { page: number; totalPages:
 }
 
 // ---------- DOCTOR APP ----------
-function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
+// ---------- DOCTOR APP ----------
+function DetailBlock({ label, value, highlight }: { label: string; value: ReactNode; highlight?: boolean }) {
+  return (
+    <div>
+      <span className="text-xs text-muted-foreground font-medium block">{label}</span>
+      <span className={`mt-0.5 block font-semibold ${highlight ? "text-primary text-base" : "text-foreground"}`}>
+        {value || "—"}
+      </span>
+    </div>
+  );
+}
+
+function DoctorApp({ user, records, users }: { user: User; records: TriajeRecord[]; users: User[] }) {
   const [docRisk, setDocRisk] = useState<"" | "alto" | "medio" | "normal">("");
   const [docFrom, setDocFrom] = useState("");
   const [docTo, setDocTo] = useState("");
   const [docSearch, setDocSearch] = useState("");
   const [docPosta, setDocPosta] = useState("");
   const [docPage, setDocPage] = useState(1);
+  const [selectedDni, setSelectedDni] = useState<string | null>(null);
 
   const sorted = useMemo(() => {
     const order: { [k: string]: number } = { alto: 0, medio: 1, normal: 2 };
@@ -1425,7 +1634,19 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
                     </td>
                     <td className="px-6 py-3"><RiskBadge level={level} /></td>
                     <td className="px-6 py-3 text-right">
-                      {isAlert ? <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90" style={{ background: "var(--color-risk-alto-strong)" }}>Contactar</button> : <span className="text-xs text-muted-foreground">—</span>}
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => setSelectedDni(r.dni)}
+                          className="rounded-lg border border-primary text-primary px-3 py-1.5 text-xs font-semibold hover:bg-primary hover:text-white transition shadow-sm"
+                        >
+                          Ver Ficha
+                        </button>
+                        {isAlert && (
+                          <button className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:opacity-90 transition" style={{ background: "var(--color-risk-alto-strong)" }}>
+                            Contactar
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -1441,6 +1662,218 @@ function DoctorApp({ user, records }: { user: User; records: TriajeRecord[] }) {
           </div>
         )}
       </section>
+
+      {/* Modal de Ficha Médica del Paciente */}
+      {selectedDni && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border border-border bg-card p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            {/* Cabecera */}
+            <div className="flex items-start justify-between border-b border-border pb-4">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-widest text-primary">Ficha Clínica del Paciente</span>
+                <h3 className="text-2xl font-bold tracking-tight mt-0.5">
+                  {users.find((u) => u.dni === selectedDni)?.nombres || records.find((r) => r.dni === selectedDni)?.nombres || "Paciente"}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">DNI: {selectedDni}</p>
+              </div>
+              <button
+                onClick={() => setSelectedDni(null)}
+                className="rounded-full border border-border p-1.5 hover:bg-muted transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Contenido */}
+            {(() => {
+              const p = users.find((u) => u.dni === selectedDni);
+              const pRecords = records.filter((r) => r.dni === selectedDni).sort((a, b) => b.createdAt - a.createdAt);
+              const latestRec = pRecords[0];
+
+              return (
+                <div className="mt-6 space-y-6">
+                  {/* 1. Datos Personales */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2">
+                      1. Datos Personales
+                    </h4>
+                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 text-sm">
+                      <DetailBlock label="Fecha de Registro" value={p?.fechaRegistro || "Demo Pre-existente"} />
+                      <DetailBlock label="Fecha de Nacimiento" value={p?.fechaNac || "No registrada"} />
+                      <DetailBlock label="Edad" value={p?.edad ? `${p.edad} años` : (latestRec?.edad ? `${latestRec.edad} años` : "No registrada")} />
+                      <DetailBlock label="Teléfono de Contacto" value={p?.telefono || "No registrado"} />
+                      <DetailBlock label="Posta / Centro" value={p?.posta || latestRec?.posta || "No asignada"} />
+                      <div className="col-span-2">
+                        <DetailBlock label="Dirección" value={p?.direccion || "No registrada"} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr className="border-border/60" />
+
+                  {/* 2. Último Triaje */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2">
+                      2. Último Triaje Registrado
+                    </h4>
+                    {latestRec ? (
+                      <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 text-sm bg-muted/30 rounded-2xl p-4">
+                        <DetailBlock label="Presión Arterial (PA)" value={latestRec.pa || "—"} />
+                        <DetailBlock label="Frecuencia Cardíaca" value={latestRec.fc ? `${latestRec.fc} lpm` : "—"} />
+                        <DetailBlock label="Peso" value={latestRec.peso ? `${latestRec.peso} kg` : "—"} />
+                        <DetailBlock label="Talla" value={latestRec.talla ? `${latestRec.talla} m` : "—"} />
+                        <DetailBlock label="IMC" value={latestRec.imc || "—"} />
+                        <DetailBlock label="Glucemia" value={latestRec.glucosa ? `${latestRec.glucosa} mg/dL` : "—"} highlight />
+                        <DetailBlock label="Estado de Medición" value={latestRec.estadoGlucosa || "—"} />
+                        <DetailBlock label="Nivel de Riesgo" value={<RiskBadge level={classify(latestRec)} />} />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">No hay registros de triaje aún.</p>
+                    )}
+                  </div>
+
+                  <hr className="border-border/60" />
+
+                  {/* 3. Antecedentes y Diagnóstico */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2">
+                      3. Antecedentes y Diagnóstico
+                    </h4>
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 text-sm">
+                      <DetailBlock label="Tipo de Diabetes" value={p?.tipoDiabetes || "No registrado"} />
+                      <DetailBlock label="Tiempo desde el diagnóstico" value={p?.tiempoDiagnostico || "No registrado"} />
+                      <div className="col-span-2">
+                        <DetailBlock
+                          label="Otras enfermedades"
+                          value={p?.otrasEnfermedades && p.otrasEnfermedades.length > 0
+                            ? p.otrasEnfermedades.filter(x => !x.startsWith("_snt_")).join(", ")
+                            : "Ninguna"
+                          }
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <DetailBlock label="Detalles u observaciones adicionales" value={p?.otrasEnfermedadesDetalle || "Ninguno"} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr className="border-border/60" />
+
+                  {/* 4. Tratamiento Actual */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2">
+                      4. Tratamiento Actual
+                    </h4>
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 text-sm">
+                      <div className="col-span-2">
+                        <DetailBlock label="Medicamentos que toma" value={p?.medicamentos || "No registrado"} />
+                      </div>
+                      <DetailBlock label="¿Usa Insulina?" value={p?.usaInsulina || "No registrado"} />
+                      {p?.usaInsulina === "Sí" && (
+                        <DetailBlock label="Insulina (cuál y cuántas unidades)" value={p?.cuantaInsulina || "—"} />
+                      )}
+                      <DetailBlock label="¿Cumple con las dosis?" value={p?.cumpleDosis || "No registrado"} />
+                    </div>
+                  </div>
+
+                  <hr className="border-border/60" />
+
+                  {/* 5. Síntomas Recientes (Últimas 2 semanas) */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2">
+                      5. Síntomas del Registro Inicial
+                    </h4>
+                    {p?.sintomasIniciales && p.sintomasIniciales.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {p.sintomasIniciales.map((s) => (
+                          <span
+                            key={s}
+                            className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                              SEVERE_SYMPTOMS.has(s)
+                                ? "bg-[var(--color-risk-alto-bg)] text-[var(--color-risk-alto-text)] border border-[var(--color-risk-alto-border)]"
+                                : "bg-muted text-muted-foreground border border-border"
+                            }`}
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">No se marcaron síntomas en el registro inicial.</p>
+                    )}
+                  </div>
+
+                  <hr className="border-border/60" />
+
+                  {/* 6. Estilo de Vida */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2">
+                      6. Estilo de Vida
+                    </h4>
+                    <div className="grid gap-4 grid-cols-2 sm:grid-cols-4 text-sm">
+                      <DetailBlock label="Actividad física" value={p?.actividadFisica === "Sí" ? `Sí (${p.frecuenciaActividad} veces/sem)` : "No"} />
+                      <DetailBlock label="Plan de alimentación" value={p?.planAlimentacion || "No registrado"} />
+                      <DetailBlock label="¿Fuma?" value={p?.fuma || "No registrado"} />
+                      <DetailBlock label="¿Consume alcohol?" value={p?.alcohol || "No registrado"} />
+                    </div>
+                  </div>
+
+                  {/* Historial Completo */}
+                  {pRecords.length > 0 && (
+                    <>
+                      <hr className="border-border/60" />
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-bold uppercase tracking-wider text-primary border-l-4 border-primary pl-2">
+                          Historial de Reportes ({pRecords.length})
+                        </h4>
+                        <div className="overflow-x-auto rounded-xl border border-border bg-muted/10">
+                          <table className="w-full text-xs">
+                            <thead className="bg-muted text-left uppercase text-muted-foreground">
+                              <tr>
+                                <th className="px-4 py-2">Fecha</th>
+                                <th className="px-4 py-2">Glucemia</th>
+                                <th className="px-4 py-2">Presión</th>
+                                <th className="px-4 py-2">FC</th>
+                                <th className="px-4 py-2">Síntomas</th>
+                                <th className="px-4 py-2 text-right">Riesgo</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {pRecords.map((rec) => {
+                                const level = classify(rec);
+                                return (
+                                  <tr key={rec.id} className="border-t border-border">
+                                    <td className="px-4 py-2">{new Date(rec.createdAt).toLocaleDateString("es-PE")}</td>
+                                    <td className="px-4 py-2 font-semibold">{rec.glucosa} mg/dL ({rec.estadoGlucosa})</td>
+                                    <td className="px-4 py-2">{rec.pa || "—"}</td>
+                                    <td className="px-4 py-2">{rec.fc ? `${rec.fc} lpm` : "—"}</td>
+                                    <td className="px-4 py-2">{rec.sintomas.length || "0"}</td>
+                                    <td className="px-4 py-2 text-right"><RiskBadge level={level} /></td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Pie de modal */}
+            <div className="mt-8 flex justify-end border-t border-border pt-4">
+              <button
+                onClick={() => setSelectedDni(null)}
+                className="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:opacity-90 transition"
+              >
+                Cerrar Ficha
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
